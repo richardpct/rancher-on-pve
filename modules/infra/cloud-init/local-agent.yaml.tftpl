@@ -1,0 +1,36 @@
+#cloud-config
+package_update: true
+write_files:
+  - path: /tmp/configure-upstream-agent.sh
+    content: |
+      #!/usr/bin/env bash
+
+      set -e -u -x
+
+      apt install -y qemu-guest-agent
+      systemctl start qemu-guest-agent
+
+      apt-get update
+      #apt-get upgrade -y
+      apt-get install -y \
+        curl \
+        vim \
+        less
+
+      #curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
+      curl -sfL https://get.rke2.io | INSTALL_RKE2_VERSION="v1.35.6+rke2r1" INSTALL_RKE2_TYPE="agent" sh -
+      systemctl enable rke2-agent.service
+      mkdir -p /etc/rancher/rke2/
+
+      echo 'DONE'
+    permissions: '0755'
+apt:
+  preserve_sources_list: false
+  primary:
+    - arches: [default]
+      uri: ${ubuntu_mirror}
+  security:
+    - arches: [default]
+      uri: http://security.ubuntu.com/ubuntu
+runcmd:
+ - [sh, "/tmp/configure-upstream-agent.sh"]
