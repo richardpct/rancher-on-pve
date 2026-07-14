@@ -60,7 +60,7 @@ resource "null_resource" "configure_rancher" {
   provisioner "local-exec" {
     command = <<EOF
       set -x
-      kubectl -n cattle-system patch setting agent-tls-mode --type=merge -p '{"value":"system-store"}'
+      KUBECONFIG=~/.kube/local kubectl -n cattle-system patch setting agent-tls-mode --type=merge -p '{"value":"system-store"}'
     EOF
   }
 
