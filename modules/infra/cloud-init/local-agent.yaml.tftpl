@@ -17,8 +17,8 @@ write_files:
         vim \
         less
 
-      #curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
-      curl -sfL https://get.rke2.io | INSTALL_RKE2_VERSION="v1.35.6+rke2r1" INSTALL_RKE2_TYPE="agent" sh -
+      curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
+      #curl -sfL https://get.rke2.io | INSTALL_RKE2_VERSION="v1.35.6+rke2r1" INSTALL_RKE2_TYPE="agent" sh -
       systemctl enable rke2-agent.service
       mkdir -p /etc/rancher/rke2/
 
