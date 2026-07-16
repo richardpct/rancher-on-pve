@@ -48,15 +48,6 @@ resource "local_file" "local_server" {
   )
 }
 
-resource "local_file" "local_agent" {
-  filename = "/tmp/local-agent.yaml"
-  content = templatefile("${path.module}/cloud-init/local-agent.yaml.tftpl",
-    {
-      ubuntu_mirror = local.ubuntu_mirror
-    }
-  )
-}
-
 resource "local_file" "cluster_server" {
   filename = "/tmp/cluster-server.yaml"
   content = templatefile("${path.module}/cloud-init/cluster-server.yaml.tftpl",
@@ -66,16 +57,7 @@ resource "local_file" "cluster_server" {
   )
 }
 
-resource "local_file" "cluster_agent" {
-  filename = "/tmp/cluster-agent.yaml"
-  content = templatefile("${path.module}/cloud-init/cluster-agent.yaml.tftpl",
-    {
-      ubuntu_mirror = local.ubuntu_mirror
-    }
-  )
-}
-
-resource "null_resource" "deploy_cloud_init_scripts" {
+resource "null_resource" "deploy_cloud_init_scripts_masters" {
   for_each = { for pve_node in var.pve_nodes : pve_node.name => pve_node }
 
   provisioner "local-exec" {
@@ -83,14 +65,11 @@ resource "null_resource" "deploy_cloud_init_scripts" {
       set -x
 
       scp /tmp/local-server.yaml   root@${each.value.ip}:/var/lib/vz/snippets/
-      scp /tmp/local-agent.yaml    root@${each.value.ip}:/var/lib/vz/snippets/
       scp /tmp/cluster-server.yaml root@${each.value.ip}:/var/lib/vz/snippets/
-      scp /tmp/cluster-agent.yaml  root@${each.value.ip}:/var/lib/vz/snippets/
     EOF
   }
 
-  depends_on = [local_file.local_server, local_file.local_agent,
-                local_file.cluster_server, local_file.cluster_agent]
+  depends_on = [local_file.local_server, local_file.cluster_server]
 }
 
 resource "proxmox_vm_qemu" "k8s_control_plane" {
@@ -155,7 +134,65 @@ resource "proxmox_vm_qemu" "k8s_control_plane" {
     startup_delay    = -1
   }
 
-  depends_on = [null_resource.update_images, null_resource.deploy_cloud_init_scripts]
+  depends_on = [null_resource.update_images, null_resource.deploy_cloud_init_scripts_masters]
+}
+
+resource "null_resource" "wait_rke2_token_is_generated" {
+  provisioner "local-exec" {
+    command = <<EOF
+      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@192.168.1.31 'sudo ls /var/lib/rancher/rke2/server/token'; do
+        sleep 2
+      done
+    EOF
+  }
+
+  depends_on = [proxmox_vm_qemu.k8s_control_plane]
+}
+
+data "external" "get_rke2_token" {
+  program = ["bash", "${path.module}/scripts/get_rke2_token.sh"]
+
+  depends_on = [null_resource.wait_rke2_token_is_generated]
+}
+
+locals {
+  rke2_token = data.external.get_rke2_token.result["token"]
+}
+
+resource "local_file" "local_agent" {
+  filename = "/tmp/local-agent.yaml"
+  content = templatefile("${path.module}/cloud-init/local-agent.yaml.tftpl",
+    {
+      ubuntu_mirror = local.ubuntu_mirror,
+      rancher_token = local.rke2_token
+    }
+  )
+
+  depends_on = [proxmox_vm_qemu.k8s_control_plane]
+}
+
+resource "local_file" "cluster_agent" {
+  filename = "/tmp/cluster-agent.yaml"
+  content = templatefile("${path.module}/cloud-init/cluster-agent.yaml.tftpl",
+    {
+      ubuntu_mirror = local.ubuntu_mirror
+    }
+  )
+}
+
+resource "null_resource" "deploy_cloud_init_scripts_workers" {
+  for_each = { for pve_node in var.pve_nodes : pve_node.name => pve_node }
+
+  provisioner "local-exec" {
+    command = <<EOF
+      set -x
+
+      scp /tmp/local-agent.yaml   root@${each.value.ip}:/var/lib/vz/snippets/
+      scp /tmp/cluster-agent.yaml root@${each.value.ip}:/var/lib/vz/snippets/
+    EOF
+  }
+
+  depends_on = [local_file.local_agent]
 }
 
 resource "proxmox_vm_qemu" "k8s_worker" {
@@ -222,7 +259,7 @@ resource "proxmox_vm_qemu" "k8s_worker" {
     startup_delay    = -1
   }
 
-  depends_on = [null_resource.update_images, null_resource.deploy_cloud_init_scripts]
+  depends_on = [null_resource.update_images, null_resource.deploy_cloud_init_scripts_workers]
 }
 
 resource "null_resource" "get_local_kube_config" {
@@ -241,24 +278,4 @@ resource "null_resource" "get_local_kube_config" {
   }
 
   depends_on = [proxmox_vm_qemu.k8s_control_plane]
-}
-
-resource "null_resource" "configure_local_cluster_token" {
-  provisioner "local-exec" {
-    command = <<EOF
-      set -x
-
-      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@192.168.1.31 'sudo ls /var/lib/rancher/rke2/server/token'; do
-        sleep 2
-      done
-
-      echo "server: https://192.168.1.31:9345\ntoken: " > /tmp/config.yaml
-      gsed -i -z 's/\n$//' /tmp/config.yaml
-      ssh -o StrictHostKeyChecking=accept-new ubuntu@192.168.1.31 'sudo cat /var/lib/rancher/rke2/server/token' >> /tmp/config.yaml
-      cat /tmp/config.yaml | ssh -o StrictHostKeyChecking=accept-new ubuntu@192.168.1.41 'sudo tee /etc/rancher/rke2/config.yaml'
-      ssh ubuntu@192.168.1.41 'sudo systemctl start rke2-agent.service'
-    EOF
-  }
-
-  depends_on = [null_resource.get_local_kube_config]
 }

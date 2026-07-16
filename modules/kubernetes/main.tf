@@ -8,11 +8,22 @@ data "terraform_remote_state" "certificate" {
   }
 }
 
-resource "kubernetes_namespace_v1" "cattle_system" {
+resource "null_resource" "wait_kubernetes_ready" {
+  provisioner "local-exec" {
+    command = <<EOF
+      while ! KUBECONFIG=~/.kube/local kubectl cluster-info; do
+        sleep 2
+      done
+    EOF
+  }
+}
 
+resource "kubernetes_namespace_v1" "cattle_system" {
   metadata {
     name = "cattle-system"
   }
+
+  depends_on = [null_resource.wait_kubernetes_ready]
 }
 
 resource "kubernetes_secret_v1" "tls_rancher_ingress" {
@@ -50,6 +61,10 @@ resource "helm_release" "rancher" {
     {
       name  = "ingress.tls.source"
       value = "secret"
+    },
+    {
+      name  = "replicas"
+      value = "1"
     }
   ]
 

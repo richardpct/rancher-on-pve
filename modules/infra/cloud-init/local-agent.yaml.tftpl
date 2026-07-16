@@ -22,6 +22,13 @@ write_files:
       systemctl enable rke2-agent.service
       mkdir -p /etc/rancher/rke2/
 
+      cat <<EOF | tee /etc/rancher/rke2/config.yaml
+      server: https://192.168.1.31:9345
+      token: ${rancher_token}
+      EOF
+
+      sudo systemctl start rke2-agent.service
+
       echo 'DONE'
     permissions: '0755'
 apt:
