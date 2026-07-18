@@ -2,6 +2,8 @@
 
 set -e
 
-TOKEN=`ssh ubuntu@192.168.1.31 'sudo cat /var/lib/rancher/rke2/server/token'`
+eval "$(jq -r '@sh "local_server=\(.local_server)"')"
+
+TOKEN=`ssh ubuntu@${local_server} 'sudo cat /var/lib/rancher/rke2/server/token'`
 
 jq -n --arg token "$TOKEN" '{"token":$token}'

@@ -1,5 +1,5 @@
 locals {
-  kube_config = "~/.kube/local"
+  kube_config_local = "~/.kube/local"
 }
 
 variable "region" {

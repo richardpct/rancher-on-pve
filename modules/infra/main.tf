@@ -140,7 +140,7 @@ resource "proxmox_vm_qemu" "k8s_control_plane" {
 resource "null_resource" "wait_rke2_token_is_generated" {
   provisioner "local-exec" {
     command = <<EOF
-      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@192.168.1.31 'sudo ls /var/lib/rancher/rke2/server/token'; do
+      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.local_server} 'sudo ls /var/lib/rancher/rke2/server/token'; do
         sleep 2
       done
     EOF
@@ -151,6 +151,10 @@ resource "null_resource" "wait_rke2_token_is_generated" {
 
 data "external" "get_rke2_token" {
   program = ["bash", "${path.module}/scripts/get_rke2_token.sh"]
+
+  query = {
+    local_server = local.local_server
+  }
 
   depends_on = [null_resource.wait_rke2_token_is_generated]
 }
@@ -164,6 +168,7 @@ resource "local_file" "local_agent" {
   content = templatefile("${path.module}/cloud-init/local-agent.yaml.tftpl",
     {
       ubuntu_mirror = local.ubuntu_mirror,
+      local_server  = local.local_server,
       rancher_token = local.rke2_token
     }
   )
@@ -262,18 +267,18 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   depends_on = [null_resource.update_images, null_resource.deploy_cloud_init_scripts_workers]
 }
 
-resource "null_resource" "get_local_kube_config" {
+resource "null_resource" "get_local_kube_config_local" {
   provisioner "local-exec" {
     command = <<EOF
       set -x
 
-      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@192.168.1.31 'ls /etc/rancher/rke2/rke2.yaml'; do
+      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.local_server} 'ls /etc/rancher/rke2/rke2.yaml'; do
         sleep 10
       done
 
-      ssh -o StrictHostKeyChecking=accept-new ubuntu@192.168.1.31 'sudo cat /etc/rancher/rke2/rke2.yaml' > ~/.kube/local
-      gsed -i 's/127.0.0.1/192.168.1.31/g' ~/.kube/local
-      chmod 600 ~/.kube/local
+      ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.local_server} 'sudo cat /etc/rancher/rke2/rke2.yaml' > ${local.kube_config_local}
+      gsed -i 's/127.0.0.1/${local.local_server}/g' ${local.kube_config_local}
+      chmod 600 ${local.kube_config_local}
     EOF
   }
 

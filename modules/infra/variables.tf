@@ -12,6 +12,8 @@ locals {
   storage                 = var.is_prod ? "mypool" : "local-lvm"
   k8s_control_planes_list = join(" ", [for k8s_control_plane in var.k8s_control_planes : k8s_control_plane.ip])
   k8s_workers_list        = join(" ", [for k8s_worker in var.k8s_workers : k8s_worker.ip])
+  local_server            = "192.168.1.31"
+  kube_config_local       = "~/.kube/local"
 }
 
 variable "region" {

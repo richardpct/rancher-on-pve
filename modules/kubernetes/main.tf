@@ -11,7 +11,7 @@ data "terraform_remote_state" "certificate" {
 resource "null_resource" "wait_kubernetes_ready" {
   provisioner "local-exec" {
     command = <<EOF
-      while ! KUBECONFIG=~/.kube/local kubectl cluster-info; do
+      while ! KUBECONFIG=${local.kube_config_local} kubectl cluster-info; do
         sleep 2
       done
     EOF
@@ -75,7 +75,7 @@ resource "null_resource" "configure_rancher" {
   provisioner "local-exec" {
     command = <<EOF
       set -x
-      KUBECONFIG=~/.kube/local kubectl -n cattle-system patch setting agent-tls-mode --type=merge -p '{"value":"system-store"}'
+      KUBECONFIG=${local.kube_config_local} kubectl -n cattle-system patch setting agent-tls-mode --type=merge -p '{"value":"system-store"}'
     EOF
   }
 
