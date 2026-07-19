@@ -20,7 +20,7 @@ init: $(TERRAFORM_LOCK) ## Init
 .PHONY: apply
 apply: init ## Create the infrastructure
 	. $(SECRET_ENV) && \
-	gtime make apply -C ../04-infra && \
+	gtime make apply -C ../04-upstream && \
 	gtime tofu apply -auto-approve
 
 .PHONY: plan
@@ -33,7 +33,7 @@ destroy: ## Destroy the infrastructure
 	. $(SECRET_ENV) && \
 	tofu state ls | while read; do tofu state rm $$REPLY; done
 	. $(SECRET_ENV) && \
-	tofu destroy -auto-approve && make destroy -C ../04-infra
+	tofu destroy -auto-approve && make destroy -C ../04-upstream
 
 .PHONY: clean
 clean: ## Clean
