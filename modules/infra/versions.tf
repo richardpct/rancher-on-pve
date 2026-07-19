@@ -4,11 +4,11 @@ terraform {
   required_providers {
     aws = {
       source = "hashicorp/aws"
-      version = "6.50.0"
+      version = "6.55.0"
     }
     proxmox = {
       source  = "telmate/proxmox"
-      version = "3.0.2-rc07"
+      version = "3.0.2-rc08"
     }
     null = {
       source  = "hashicorp/null"
