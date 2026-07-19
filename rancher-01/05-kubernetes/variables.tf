@@ -8,9 +8,9 @@ variable "bucket" {
   description = "bucket"
 }
 
-variable "key_kubernetes" {
+variable "key_rancher" {
   type        = string
-  description = "bucket kubernetes key"
+  description = "bucket rancher key"
 }
 
 variable "key_certificate" {

@@ -8,9 +8,9 @@ variable "bucket" {
   description = "bucket"
 }
 
-variable "key_infra" {
+variable "key_upstream" {
   type        = string
-  description = "bucket infra key"
+  description = "bucket upstream key"
 }
 
 variable "nameserver" {

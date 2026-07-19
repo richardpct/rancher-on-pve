@@ -28,7 +28,7 @@ resource "null_resource" "ssh_keys_cleanup" {
     command = <<EOF
       set -x
 
-      for i in ${local.k8s_control_planes_list}; do
+      for i in ${local.k8s_masters_list}; do
         ssh-keygen -R $i
       done
 
@@ -39,18 +39,18 @@ resource "null_resource" "ssh_keys_cleanup" {
   }
 }
 
-resource "local_file" "local_server" {
-  filename = "/tmp/local-server.yaml"
-  content = templatefile("${path.module}/cloud-init/local-server.yaml.tftpl",
+resource "local_file" "upstream_master" {
+  filename = "/tmp/upstream-master.yaml"
+  content = templatefile("${path.module}/cloud-init/upstream-master.yaml.tftpl",
     {
       ubuntu_mirror = local.ubuntu_mirror
     }
   )
 }
 
-resource "local_file" "cluster_server" {
-  filename = "/tmp/cluster-server.yaml"
-  content = templatefile("${path.module}/cloud-init/cluster-server.yaml.tftpl",
+resource "local_file" "downstream_master" {
+  filename = "/tmp/downstream-master.yaml"
+  content = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
     {
       ubuntu_mirror = local.ubuntu_mirror
     }
@@ -64,19 +64,19 @@ resource "null_resource" "deploy_cloud_init_scripts_masters" {
     command = <<EOF
       set -x
 
-      scp /tmp/local-server.yaml   root@${each.value.ip}:/var/lib/vz/snippets/
-      scp /tmp/cluster-server.yaml root@${each.value.ip}:/var/lib/vz/snippets/
+      scp /tmp/upstream-master.yaml root@${each.value.ip}:/var/lib/vz/snippets/
+      scp /tmp/downstream-master.yaml root@${each.value.ip}:/var/lib/vz/snippets/
     EOF
   }
 
-  depends_on = [local_file.local_server, local_file.cluster_server]
+  depends_on = [local_file.upstream_master, local_file.downstream_master]
 }
 
-resource "proxmox_vm_qemu" "k8s_control_plane" {
-  for_each    = { for k8s_control_plane in var.k8s_control_planes : k8s_control_plane.name => k8s_control_plane }
+resource "proxmox_vm_qemu" "k8s_master" {
+  for_each    = { for k8s_master in var.k8s_masters : k8s_master.name => k8s_master }
   vmid        = each.value.vmid
   name        = each.value.name
-  tags        = "rke2-server"
+  tags        = "rke2-master"
   target_node = each.value.target_node
   agent       = 1
   cpu {
@@ -86,11 +86,11 @@ resource "proxmox_vm_qemu" "k8s_control_plane" {
   boot             = "order=scsi0"
   clone            = local.clone
   scsihw           = "virtio-scsi-single"
-  vm_state         = "running"
+  power_state      = "running"
   automatic_reboot = true
 
   # Cloud-Init configuration
-  cicustom   = "vendor=local:snippets/${each.value.cluster_type}-server.yaml" # /var/lib/vz/snippets/
+  cicustom   = "vendor=local:snippets/${each.value.cluster_type}-master.yaml" # /var/lib/vz/snippets/
   ciupgrade  = true
   nameserver = var.nameserver
   ipconfig0  = "ip=${each.value.ip}/${each.value.cidr_prefix},gw=${var.gateway}"
@@ -140,20 +140,20 @@ resource "proxmox_vm_qemu" "k8s_control_plane" {
 resource "null_resource" "wait_rke2_token_is_generated" {
   provisioner "local-exec" {
     command = <<EOF
-      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.local_server} 'sudo ls /var/lib/rancher/rke2/server/token'; do
+      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.upstream_master} 'sudo ls /var/lib/rancher/rke2/server/token'; do
         sleep 2
       done
     EOF
   }
 
-  depends_on = [proxmox_vm_qemu.k8s_control_plane]
+  depends_on = [proxmox_vm_qemu.k8s_master]
 }
 
 data "external" "get_rke2_token" {
   program = ["bash", "${path.module}/scripts/get_rke2_token.sh"]
 
   query = {
-    local_server = local.local_server
+    upstream_master = local.upstream_master
   }
 
   depends_on = [null_resource.wait_rke2_token_is_generated]
@@ -163,22 +163,22 @@ locals {
   rke2_token = data.external.get_rke2_token.result["token"]
 }
 
-resource "local_file" "local_agent" {
-  filename = "/tmp/local-agent.yaml"
-  content = templatefile("${path.module}/cloud-init/local-agent.yaml.tftpl",
+resource "local_file" "upstream_worker" {
+  filename = "/tmp/upstream-worker.yaml"
+  content = templatefile("${path.module}/cloud-init/upstream-worker.yaml.tftpl",
     {
-      ubuntu_mirror = local.ubuntu_mirror,
-      local_server  = local.local_server,
-      rancher_token = local.rke2_token
+      ubuntu_mirror   = local.ubuntu_mirror,
+      upstream_master = local.upstream_master,
+      rancher_token   = local.rke2_token
     }
   )
 
-  depends_on = [proxmox_vm_qemu.k8s_control_plane]
+  #depends_on = [proxmox_vm_qemu.k8s_master]
 }
 
-resource "local_file" "cluster_agent" {
-  filename = "/tmp/cluster-agent.yaml"
-  content = templatefile("${path.module}/cloud-init/cluster-agent.yaml.tftpl",
+resource "local_file" "downstream_worker" {
+  filename = "/tmp/downstream-worker.yaml"
+  content = templatefile("${path.module}/cloud-init/downstream-worker.yaml.tftpl",
     {
       ubuntu_mirror = local.ubuntu_mirror
     }
@@ -192,19 +192,19 @@ resource "null_resource" "deploy_cloud_init_scripts_workers" {
     command = <<EOF
       set -x
 
-      scp /tmp/local-agent.yaml   root@${each.value.ip}:/var/lib/vz/snippets/
-      scp /tmp/cluster-agent.yaml root@${each.value.ip}:/var/lib/vz/snippets/
+      scp /tmp/upstream-worker.yaml root@${each.value.ip}:/var/lib/vz/snippets/
+      scp /tmp/downstream-worker.yaml root@${each.value.ip}:/var/lib/vz/snippets/
     EOF
   }
 
-  depends_on = [local_file.local_agent]
+  depends_on = [local_file.upstream_worker, local_file.downstream_worker]
 }
 
 resource "proxmox_vm_qemu" "k8s_worker" {
   for_each    = { for k8s_worker in var.k8s_workers : k8s_worker.name => k8s_worker }
   vmid        = each.value.vmid
   name        = each.value.name
-  tags        = "rke2-agent"
+  tags        = "rke2-worker"
   target_node = each.value.target_node
   agent       = 1
   cpu {
@@ -214,11 +214,11 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   boot             = "order=scsi0" # has to be the same as the OS disk of the template
   clone            = local.clone
   scsihw           = "virtio-scsi-single"
-  vm_state         = "running"
+  power_state      = "running"
   automatic_reboot = true
 
   # Cloud-Init configuration
-  cicustom   = "vendor=local:snippets/${each.value.cluster_type}-agent.yaml" # /var/lib/vz/snippets/
+  cicustom   = "vendor=local:snippets/${each.value.cluster_type}-worker.yaml" # /var/lib/vz/snippets/
   ciupgrade  = true
   nameserver = var.nameserver
   ipconfig0  = "ip=${each.value.ip}/${each.value.cidr_prefix},gw=${var.gateway}"
@@ -267,20 +267,20 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   depends_on = [null_resource.update_images, null_resource.deploy_cloud_init_scripts_workers]
 }
 
-resource "null_resource" "get_local_kube_config_local" {
+resource "null_resource" "get_local_kube_config_upstream" {
   provisioner "local-exec" {
     command = <<EOF
       set -x
 
-      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.local_server} 'ls /etc/rancher/rke2/rke2.yaml'; do
+      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.upstream_master} 'ls /etc/rancher/rke2/rke2.yaml'; do
         sleep 10
       done
 
-      ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.local_server} 'sudo cat /etc/rancher/rke2/rke2.yaml' > ${local.kube_config_local}
-      gsed -i 's/127.0.0.1/${local.local_server}/g' ${local.kube_config_local}
-      chmod 600 ${local.kube_config_local}
+      ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.upstream_master} 'sudo cat /etc/rancher/rke2/rke2.yaml' > ${local.kube_config_upstream}
+      gsed -i 's/127.0.0.1/${local.upstream_master}/g' ${local.kube_config_upstream}
+      chmod 600 ${local.kube_config_upstream}
     EOF
   }
 
-  depends_on = [proxmox_vm_qemu.k8s_control_plane]
+  depends_on = [proxmox_vm_qemu.k8s_master]
 }

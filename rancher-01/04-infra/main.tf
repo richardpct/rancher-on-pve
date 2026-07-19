@@ -14,14 +14,14 @@ module "infra" {
     { name = "pve-02", ip = "192.168.1.22", cloudinit_img_id = 9002 },
     { name = "pve-03", ip = "192.168.1.23", cloudinit_img_id = 9003 }
   ]
-  k8s_control_planes = [
-    { name = "local-master-01",     vmid = 101, ip = "192.168.1.31", cidr_prefix = 24, target_node = "pve-01", cluster_type = "local" },
-    { name = "andromeda-master-01", vmid = 102, ip = "192.168.1.32", cidr_prefix = 24, target_node = "pve-02", cluster_type = "cluster" },
-    { name = "phoenix-master-01",   vmid = 103, ip = "192.168.1.33", cidr_prefix = 24, target_node = "pve-03", cluster_type = "cluster" }
+  k8s_masters = [
+    { name = "local-master-01",     vmid = 101, ip = "192.168.1.31", cidr_prefix = 24, target_node = "pve-01", cluster_type = "upstream" },
+    { name = "andromeda-master-01", vmid = 102, ip = "192.168.1.32", cidr_prefix = 24, target_node = "pve-02", cluster_type = "downstream" },
+    { name = "phoenix-master-01",   vmid = 103, ip = "192.168.1.33", cidr_prefix = 24, target_node = "pve-03", cluster_type = "downstream" }
   ]
   k8s_workers = [
-    { name = "local-worker-01",     vmid = 201, ip = "192.168.1.41", cidr_prefix = 24, target_node = "pve-01", cluster_type = "local" },
-    { name = "andromeda-worker-01", vmid = 202, ip = "192.168.1.42", cidr_prefix = 24, target_node = "pve-02", cluster_type = "cluster" },
-    { name = "phoenix-worker-01",   vmid = 203, ip = "192.168.1.43", cidr_prefix = 24, target_node = "pve-03", cluster_type = "cluster" }
+    { name = "local-worker-01",     vmid = 201, ip = "192.168.1.41", cidr_prefix = 24, target_node = "pve-01", cluster_type = "upstream" },
+    { name = "andromeda-worker-01", vmid = 202, ip = "192.168.1.42", cidr_prefix = 24, target_node = "pve-02", cluster_type = "downstream" },
+    { name = "phoenix-worker-01",   vmid = 203, ip = "192.168.1.43", cidr_prefix = 24, target_node = "pve-03", cluster_type = "downstream" }
   ]
 }

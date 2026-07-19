@@ -2,8 +2,8 @@
 
 set -e
 
-eval "$(jq -r '@sh "local_server=\(.local_server)"')"
+eval "$(jq -r '@sh "upstream_master=\(.upstream_master)"')"
 
-TOKEN=`ssh ubuntu@${local_server} 'sudo cat /var/lib/rancher/rke2/server/token'`
+TOKEN=`ssh ubuntu@${upstream_master} 'sudo cat /var/lib/rancher/rke2/server/token'`
 
 jq -n --arg token "$TOKEN" '{"token":$token}'
