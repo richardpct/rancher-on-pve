@@ -1,5 +1,5 @@
-module "infra" {
-  source         = "../../modules/infra"
+module "upstream" {
+  source         = "../../modules/upstream"
   region         = var.region
   bucket         = var.bucket
   nameserver     = var.nameserver

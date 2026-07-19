@@ -1,5 +1,5 @@
-module "kubernetes" {
-  source          = "../../modules/kubernetes"
+module "rancher" {
+  source          = "../../modules/rancher"
   region          = var.region
   bucket          = var.bucket
   key_certificate = var.key_certificate
