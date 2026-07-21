@@ -14,7 +14,7 @@ locals {
   k8s_workers_list     = join(" ", [for k8s_worker in var.k8s_workers : k8s_worker.ip])
   upstream_master      = "192.168.1.31"
   kube_config_upstream = "~/.kube/local"
-  cluster_type         = "upstream"
+  cluster_type         = "downstream"
 }
 
 variable "region" {

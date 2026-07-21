@@ -39,9 +39,9 @@ resource "null_resource" "ssh_keys_cleanup" {
   }
 }
 
-resource "local_file" "upstream_master" {
-  filename = "/tmp/upstream-master.yaml"
-  content = templatefile("${path.module}/cloud-init/upstream-master.yaml.tftpl",
+resource "local_file" "downstream_master" {
+  filename = "/tmp/downstream-master.yaml"
+  content = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
     {
       ubuntu_mirror = local.ubuntu_mirror
     }
@@ -55,11 +55,11 @@ resource "null_resource" "deploy_cloud_init_scripts_masters" {
     command = <<EOF
       set -x
 
-      scp /tmp/upstream-master.yaml root@${each.value.ip}:/var/lib/vz/snippets/
+      scp /tmp/downstream-master.yaml root@${each.value.ip}:/var/lib/vz/snippets/
     EOF
   }
 
-  depends_on = [local_file.upstream_master]
+  depends_on = [local_file.downstream_master]
 }
 
 resource "proxmox_vm_qemu" "k8s_master" {
@@ -127,39 +127,11 @@ resource "proxmox_vm_qemu" "k8s_master" {
   depends_on = [null_resource.update_images, null_resource.deploy_cloud_init_scripts_masters]
 }
 
-resource "null_resource" "wait_rke2_token_is_generated" {
-  provisioner "local-exec" {
-    command = <<EOF
-      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.upstream_master} 'sudo ls /var/lib/rancher/rke2/server/token'; do
-        sleep 2
-      done
-    EOF
-  }
-
-  depends_on = [proxmox_vm_qemu.k8s_master]
-}
-
-data "external" "get_rke2_token" {
-  program = ["bash", "${path.module}/scripts/get_rke2_token.sh"]
-
-  query = {
-    upstream_master = local.upstream_master
-  }
-
-  depends_on = [null_resource.wait_rke2_token_is_generated]
-}
-
-locals {
-  rke2_token = data.external.get_rke2_token.result["token"]
-}
-
-resource "local_file" "upstream_worker" {
-  filename = "/tmp/upstream-worker.yaml"
-  content = templatefile("${path.module}/cloud-init/upstream-worker.yaml.tftpl",
+resource "local_file" "downstream_worker" {
+  filename = "/tmp/downstream-worker.yaml"
+  content = templatefile("${path.module}/cloud-init/downstream-worker.yaml.tftpl",
     {
-      ubuntu_mirror   = local.ubuntu_mirror,
-      upstream_master = local.upstream_master,
-      rancher_token   = local.rke2_token
+      ubuntu_mirror = local.ubuntu_mirror
     }
   )
 }
@@ -171,11 +143,11 @@ resource "null_resource" "deploy_cloud_init_scripts_workers" {
     command = <<EOF
       set -x
 
-      scp /tmp/upstream-worker.yaml root@${each.value.ip}:/var/lib/vz/snippets/
+      scp /tmp/downstream-worker.yaml root@${each.value.ip}:/var/lib/vz/snippets/
     EOF
   }
 
-  depends_on = [local_file.upstream_worker]
+  depends_on = [local_file.downstream_worker]
 }
 
 resource "proxmox_vm_qemu" "k8s_worker" {
@@ -243,22 +215,4 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   }
 
   depends_on = [null_resource.update_images, null_resource.deploy_cloud_init_scripts_workers]
-}
-
-resource "null_resource" "get_local_kube_config_upstream" {
-  provisioner "local-exec" {
-    command = <<EOF
-      set -x
-
-      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.upstream_master} 'ls /etc/rancher/rke2/rke2.yaml'; do
-        sleep 10
-      done
-
-      ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.upstream_master} 'sudo cat /etc/rancher/rke2/rke2.yaml' > ${local.kube_config_upstream}
-      gsed -i 's/127.0.0.1/${local.upstream_master}/g' ${local.kube_config_upstream}
-      chmod 600 ${local.kube_config_upstream}
-    EOF
-  }
-
-  depends_on = [proxmox_vm_qemu.k8s_master]
 }
