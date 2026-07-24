@@ -41,7 +41,7 @@ resource "null_resource" "ssh_keys_cleanup" {
 
 resource "local_file" "downstream_master" {
   filename = "/tmp/downstream-master.yaml"
-  content = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
+  content  = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
     {
       ubuntu_mirror = local.ubuntu_mirror
     }

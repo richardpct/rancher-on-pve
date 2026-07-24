@@ -71,13 +71,47 @@ resource "helm_release" "rancher" {
   depends_on = [kubernetes_secret_v1.tls_rancher_ingress]
 }
 
-resource "null_resource" "configure_rancher" {
+resource "null_resource" "wait_rancher_ready" {
   provisioner "local-exec" {
     command = <<EOF
-      set -x
-      KUBECONFIG=${local.kube_config_local} kubectl -n cattle-system patch setting agent-tls-mode --type=merge -p '{"value":"system-store"}'
+      while ! curl https://rancher.${var.my_domain}/ping; do
+        sleep 2
+      done
     EOF
   }
 
   depends_on = [helm_release.rancher]
+}
+
+resource "rancher2_bootstrap" "admin" {
+  initial_password = var.rancher_pass
+  password         = var.rancher_pass
+
+  depends_on = [null_resource.wait_rancher_ready]
+}
+
+resource "rancher2_setting" "agent_tls_mode" {
+  name  = "agent-tls-mode"
+  value = "system-store"
+
+  depends_on = [rancher2_bootstrap.admin]
+}
+
+resource "rancher2_cluster_v2" "downstream_clusters" {
+  for_each              = toset(var.downstream_clusters)
+  name                  = each.key
+  kubernetes_version    = "v1.35.6+rke2r1"
+  enable_network_policy = false
+  // There are two builtin PSACT: rancher-privileged and rancher-restricted. You can also create new ones.
+  #default_pod_security_admission_configuration_template_name = "rancher-restricted"
+  rke_config {
+    machine_global_config = yamlencode({
+      cni                 = "cilium"
+      disable-kube-proxy  = false
+      etcd-expose-metrics = false
+      ingress-controller  = "traefik"
+    })
+  }
+
+  depends_on = [rancher2_setting.agent_tls_mode]
 }

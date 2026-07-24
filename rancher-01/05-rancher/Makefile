@@ -21,7 +21,7 @@ init: $(TERRAFORM_LOCK) ## Init
 apply: init ## Create the infrastructure
 	. $(SECRET_ENV) && \
 	gtime make apply -C ../04-upstream && \
-	gtime tofu apply -auto-approve
+	gtime tofu apply -auto-approve -parallelism=1
 
 .PHONY: plan
 plan: init ## Dry run

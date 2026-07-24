@@ -26,3 +26,8 @@ variable "rancher_pass" {
   type        = string
   description = "rancher password"
 }
+
+variable "downstream_clusters" {
+  type        = list(string)
+  description = "downstream clusters list"
+}
