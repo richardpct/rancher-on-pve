@@ -13,6 +13,11 @@ variable "key_downstream" {
   description = "bucket downstream key"
 }
 
+variable "key_rancher" {
+  type        = string
+  description = "bucket rancher key"
+}
+
 variable "nameserver" {
   type        = string
   description = "nameserver"

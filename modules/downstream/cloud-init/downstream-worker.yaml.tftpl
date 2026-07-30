@@ -17,6 +17,8 @@ write_files:
         vim \
         less
 
+      eval ${registration_cmd} --worker
+
       echo 'DONE'
     permissions: '0755'
 apt:

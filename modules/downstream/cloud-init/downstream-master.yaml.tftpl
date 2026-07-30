@@ -18,6 +18,8 @@ write_files:
         less \
         bash-completion
 
+      eval ${registration_cmd} --etcd --controlplane
+
       echo 'DONE'
     permissions: '0755'
 apt:

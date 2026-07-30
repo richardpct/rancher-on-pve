@@ -15,6 +15,7 @@ locals {
   upstream_master      = "192.168.1.31"
   kube_config_upstream = "~/.kube/local"
   cluster_type         = "downstream"
+  clusters_list        = join(" ", var.clusters)
 }
 
 variable "region" {
@@ -25,6 +26,11 @@ variable "region" {
 variable "bucket" {
   type        = string
   description = "bucket"
+}
+
+variable "key_rancher" {
+  type        = string
+  description = "bucket rancher key"
 }
 
 variable "nameserver" {
@@ -70,6 +76,11 @@ variable "pve_nodes" {
   }))
 }
 
+variable "clusters" {
+  type        = list(string)
+  description = "downstream clusters list"
+}
+
 variable "k8s_masters" {
   type = list(object({
     name         = string
@@ -77,6 +88,7 @@ variable "k8s_masters" {
     ip           = string
     cidr_prefix  = number
     target_node  = string
+    cluster      = string
   }))
 }
 
@@ -87,5 +99,6 @@ variable "k8s_workers" {
     ip           = string
     cidr_prefix  = number
     target_node  = string
+    cluster      = string
   }))
 }

@@ -115,3 +115,13 @@ resource "rancher2_cluster_v2" "downstream_clusters" {
 
   depends_on = [rancher2_setting.agent_tls_mode]
 }
+
+resource "local_sensitive_file" "downstream_kubeconfig" {
+  for_each = rancher2_cluster_v2.downstream_clusters
+
+  filename        = pathexpand("~/.kube/${each.key}")
+  content         = each.value.kube_config
+  file_permission = "0600"
+
+  depends_on = [rancher2_cluster_v2.downstream_clusters]
+}
