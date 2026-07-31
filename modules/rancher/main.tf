@@ -85,16 +85,30 @@ resource "null_resource" "wait_rancher_ready" {
 
 resource "rancher2_bootstrap" "admin" {
   initial_password = var.rancher_pass
-  password         = var.rancher_pass
+  password         = "${var.rancher_pass}${var.rancher_pass}"
 
   depends_on = [null_resource.wait_rancher_ready]
+}
+
+resource "rancher2_setting" "password_min_length" {
+  name  = "password-min-length"
+  value = "10"
+
+  depends_on = [rancher2_bootstrap.admin]
+}
+
+resource "rancher2_bootstrap" "admin_bis" {
+  initial_password = "${var.rancher_pass}${var.rancher_pass}"
+  password         = var.rancher_pass
+
+  depends_on = [rancher2_setting.password_min_length]
 }
 
 resource "rancher2_setting" "agent_tls_mode" {
   name  = "agent-tls-mode"
   value = "system-store"
 
-  depends_on = [rancher2_bootstrap.admin]
+  depends_on = [rancher2_bootstrap.admin_bis]
 }
 
 resource "rancher2_cluster_v2" "downstream_clusters" {
