@@ -1,3 +1,13 @@
+data "terraform_remote_state" "upstream" {
+  backend = "s3"
+
+  config = {
+    bucket = var.bucket
+    key    = var.key_upstream
+    region = var.region
+  }
+}
+
 data "terraform_remote_state" "rancher" {
   backend = "s3"
 
@@ -9,7 +19,7 @@ data "terraform_remote_state" "rancher" {
 }
 
 resource "null_resource" "update_images" {
-  for_each = { for pve_node in var.pve_nodes : pve_node.name => pve_node }
+  for_each = { for pve_node in data.terraform_remote_state.upstream.outputs.pve_nodes : pve_node.name => pve_node }
 
   provisioner "local-exec" {
     command = <<EOF
@@ -50,7 +60,7 @@ resource "null_resource" "ssh_keys_cleanup" {
 }
 
 resource "local_file" "downstream_master" {
-  for_each = toset(var.clusters)
+  for_each = toset(data.terraform_remote_state.rancher.outputs.downstream_clusters)
 
   filename = "/tmp/downstream-master-${each.key}.yaml"
   content  = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
@@ -62,7 +72,7 @@ resource "local_file" "downstream_master" {
 }
 
 resource "null_resource" "deploy_cloud_init_scripts_masters" {
-  for_each = { for pve_node in var.pve_nodes : pve_node.name => pve_node }
+  for_each = { for pve_node in data.terraform_remote_state.upstream.outputs.pve_nodes : pve_node.name => pve_node }
 
   provisioner "local-exec" {
     command = <<EOF
@@ -143,7 +153,7 @@ resource "proxmox_vm_qemu" "k8s_master" {
 }
 
 resource "local_file" "downstream_worker" {
-  for_each = toset(var.clusters)
+  for_each = toset(data.terraform_remote_state.rancher.outputs.downstream_clusters)
 
   filename = "/tmp/downstream-worker-${each.key}.yaml"
   content = templatefile("${path.module}/cloud-init/downstream-worker.yaml.tftpl",
@@ -155,7 +165,7 @@ resource "local_file" "downstream_worker" {
 }
 
 resource "null_resource" "deploy_cloud_init_scripts_workers" {
-  for_each = { for pve_node in var.pve_nodes : pve_node.name => pve_node }
+  for_each = { for pve_node in data.terraform_remote_state.upstream.outputs.pve_nodes : pve_node.name => pve_node }
 
   provisioner "local-exec" {
     command = <<EOF

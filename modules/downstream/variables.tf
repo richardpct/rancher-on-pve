@@ -15,7 +15,7 @@ locals {
   upstream_master      = "192.168.1.31"
   kube_config_upstream = "~/.kube/local"
   cluster_type         = "downstream"
-  clusters_list        = join(" ", var.clusters)
+  clusters_list        = join(" ", data.terraform_remote_state.rancher.outputs.downstream_clusters)
 }
 
 variable "region" {
@@ -26,6 +26,11 @@ variable "region" {
 variable "bucket" {
   type        = string
   description = "bucket"
+}
+
+variable "key_upstream" {
+  type        = string
+  description = "bucket upstream key"
 }
 
 variable "key_rancher" {
@@ -66,19 +71,6 @@ variable "pm_password" {
 variable "is_prod" {
   type        = bool
   description = "is this a production environment?"
-}
-
-variable "pve_nodes" {
-  type = list(object({
-    name             = string
-    ip               = string
-    cloudinit_img_id = number
-  }))
-}
-
-variable "clusters" {
-  type        = list(string)
-  description = "downstream clusters list"
 }
 
 variable "k8s_masters" {
