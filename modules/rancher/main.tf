@@ -8,6 +8,16 @@ data "terraform_remote_state" "certificate" {
   }
 }
 
+data "terraform_remote_state" "upstream" {
+  backend = "s3"
+
+  config = {
+    bucket = var.bucket
+    key    = var.key_upstream
+    region = var.region
+  }
+}
+
 resource "null_resource" "wait_kubernetes_ready" {
   provisioner "local-exec" {
     command = <<EOF
@@ -64,7 +74,7 @@ resource "helm_release" "rancher" {
     },
     {
       name  = "replicas"
-      value = "1"
+      value = length(data.terraform_remote_state.upstream.outputs.k8s_masters_upstream)
     }
   ]
 
