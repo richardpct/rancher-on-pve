@@ -1,7 +1,7 @@
 #cloud-config
 package_update: true
 write_files:
-  - path: /tmp/configure-upstream-agent.sh
+  - path: /tmp/configure-upstream-worker.sh
     content: |
       #!/usr/bin/env bash
 
@@ -27,7 +27,7 @@ write_files:
       token: ${rancher_token}
       EOF
 
-      sudo systemctl start rke2-agent.service
+      systemctl start rke2-agent.service
 
       echo 'DONE'
     permissions: '0755'
@@ -40,4 +40,4 @@ apt:
     - arches: [default]
       uri: http://security.ubuntu.com/ubuntu
 runcmd:
- - [sh, "/tmp/configure-upstream-agent.sh"]
+ - [sh, "/tmp/configure-upstream-worker.sh"]

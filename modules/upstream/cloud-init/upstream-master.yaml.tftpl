@@ -1,7 +1,7 @@
 #cloud-config
 package_update: true
 write_files:
-  - path: /tmp/configure-upstream-server.sh
+  - path: /tmp/configure-upstream-master.sh
     content: |
       #!/usr/bin/env bash
 
@@ -67,4 +67,4 @@ apt:
     - arches: [default]
       uri: http://security.ubuntu.com/ubuntu
 runcmd:
- - [sh, "/tmp/configure-upstream-server.sh"]
+ - [sh, "/tmp/configure-upstream-master.sh"]

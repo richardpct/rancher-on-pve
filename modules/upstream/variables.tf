@@ -4,9 +4,9 @@ locals {
   ubuntu_name          = "noble"
   clone                = "ubuntu-${local.ubuntu_version}-cloudinit"
   master_cores         = 2
-  worker_cores         = 4
+  worker_cores         = 2
   master_memory        = 4096
-  worker_memory        = 8192
+  worker_memory        = 4096
   master_disk          = "30G"
   worker_disk          = "30G"
   storage              = var.is_prod ? "mypool" : "local-lvm"
@@ -72,20 +72,20 @@ variable "pve_nodes" {
 
 variable "k8s_masters" {
   type = list(object({
-    name         = string
-    vmid         = number
-    ip           = string
-    cidr_prefix  = number
-    target_node  = string
+    name        = string
+    vmid        = number
+    ip          = string
+    cidr_prefix = number
+    target_node = string
   }))
 }
 
 variable "k8s_workers" {
   type = list(object({
-    name         = string
-    vmid         = number
-    ip           = string
-    cidr_prefix  = number
-    target_node  = string
+    name        = string
+    vmid        = number
+    ip          = string
+    cidr_prefix = number
+    target_node = string
   }))
 }

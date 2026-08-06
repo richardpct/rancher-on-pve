@@ -4,9 +4,9 @@ locals {
   ubuntu_name          = "noble"
   clone                = "ubuntu-${local.ubuntu_version}-cloudinit"
   master_cores         = 2
-  worker_cores         = 4
+  worker_cores         = 2
   master_memory        = 4096
-  worker_memory        = 8192
+  worker_memory        = 4096
   master_disk          = "30G"
   worker_disk          = "30G"
   storage              = var.is_prod ? "mypool" : "local-lvm"
@@ -15,6 +15,7 @@ locals {
   upstream_master      = "192.168.1.31"
   kube_config_upstream = "~/.kube/local"
   cluster_type         = "downstream"
+  clusters_list        = join(" ", data.terraform_remote_state.rancher.outputs.downstream_clusters)
 }
 
 variable "region" {
@@ -25,6 +26,16 @@ variable "region" {
 variable "bucket" {
   type        = string
   description = "bucket"
+}
+
+variable "key_upstream" {
+  type        = string
+  description = "bucket upstream key"
+}
+
+variable "key_rancher" {
+  type        = string
+  description = "bucket rancher key"
 }
 
 variable "nameserver" {
@@ -62,30 +73,24 @@ variable "is_prod" {
   description = "is this a production environment?"
 }
 
-variable "pve_nodes" {
-  type = list(object({
-    name             = string
-    ip               = string
-    cloudinit_img_id = number
-  }))
-}
-
 variable "k8s_masters" {
   type = list(object({
-    name         = string
-    vmid         = number
-    ip           = string
-    cidr_prefix  = number
-    target_node  = string
+    name        = string
+    vmid        = number
+    ip          = string
+    cidr_prefix = number
+    target_node = string
+    cluster     = string
   }))
 }
 
 variable "k8s_workers" {
   type = list(object({
-    name         = string
-    vmid         = number
-    ip           = string
-    cidr_prefix  = number
-    target_node  = string
+    name        = string
+    vmid        = number
+    ip          = string
+    cidr_prefix = number
+    target_node = string
+    cluster     = string
   }))
 }

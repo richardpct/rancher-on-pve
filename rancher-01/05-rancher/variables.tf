@@ -18,6 +18,11 @@ variable "key_certificate" {
   description = "bucket certificate key"
 }
 
+variable "key_upstream" {
+  type        = string
+  description = "bucket upstream key"
+}
+
 variable "my_domain" {
   type        = string
   description = "my domain name"

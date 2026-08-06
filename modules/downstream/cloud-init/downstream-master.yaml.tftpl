@@ -1,7 +1,7 @@
 #cloud-config
 package_update: true
 write_files:
-  - path: /tmp/configure-downstream-server.sh
+  - path: /tmp/configure-downstream-master.sh
     content: |
       #!/usr/bin/env bash
 
@@ -18,6 +18,8 @@ write_files:
         less \
         bash-completion
 
+      eval ${registration_cmd} --etcd --controlplane
+
       echo 'DONE'
     permissions: '0755'
 apt:
@@ -29,4 +31,4 @@ apt:
     - arches: [default]
       uri: http://security.ubuntu.com/ubuntu
 runcmd:
- - [sh, "/tmp/configure-downstream-server.sh"]
+ - [sh, "/tmp/configure-downstream-master.sh"]

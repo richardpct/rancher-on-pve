@@ -1,7 +1,7 @@
 #cloud-config
 package_update: true
 write_files:
-  - path: /tmp/configure-downstream-agent.sh
+  - path: /tmp/configure-downstream-worker.sh
     content: |
       #!/usr/bin/env bash
 
@@ -17,6 +17,8 @@ write_files:
         vim \
         less
 
+      eval ${registration_cmd} --worker
+
       echo 'DONE'
     permissions: '0755'
 apt:
@@ -28,4 +30,4 @@ apt:
     - arches: [default]
       uri: http://security.ubuntu.com/ubuntu
 runcmd:
- - [sh, "/tmp/configure-downstream-agent.sh"]
+ - [sh, "/tmp/configure-downstream-worker.sh"]

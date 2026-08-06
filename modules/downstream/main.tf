@@ -1,5 +1,25 @@
+data "terraform_remote_state" "upstream" {
+  backend = "s3"
+
+  config = {
+    bucket = var.bucket
+    key    = var.key_upstream
+    region = var.region
+  }
+}
+
+data "terraform_remote_state" "rancher" {
+  backend = "s3"
+
+  config = {
+    bucket = var.bucket
+    key    = var.key_rancher
+    region = var.region
+  }
+}
+
 resource "null_resource" "update_images" {
-  for_each = { for pve_node in var.pve_nodes : pve_node.name => pve_node }
+  for_each = { for pve_node in data.terraform_remote_state.upstream.outputs.pve_nodes : pve_node.name => pve_node }
 
   provisioner "local-exec" {
     command = <<EOF
@@ -40,22 +60,27 @@ resource "null_resource" "ssh_keys_cleanup" {
 }
 
 resource "local_file" "downstream_master" {
-  filename = "/tmp/downstream-master.yaml"
-  content  = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
+  for_each = toset(data.terraform_remote_state.rancher.outputs.downstream_clusters)
+
+  filename = "/tmp/downstream-master-${each.key}.yaml"
+  content = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
     {
-      ubuntu_mirror = local.ubuntu_mirror
+      ubuntu_mirror    = local.ubuntu_mirror,
+      registration_cmd = data.terraform_remote_state.rancher.outputs.downstream_clusters_tokens[each.key]
     }
   )
 }
 
 resource "null_resource" "deploy_cloud_init_scripts_masters" {
-  for_each = { for pve_node in var.pve_nodes : pve_node.name => pve_node }
+  for_each = { for pve_node in data.terraform_remote_state.upstream.outputs.pve_nodes : pve_node.name => pve_node }
 
   provisioner "local-exec" {
     command = <<EOF
       set -x
 
-      scp /tmp/downstream-master.yaml root@${each.value.ip}:/var/lib/vz/snippets/
+      for cluster in ${local.clusters_list}; do
+        scp /tmp/downstream-master-$cluster.yaml root@${each.value.ip}:/var/lib/vz/snippets/
+      done
     EOF
   }
 
@@ -80,7 +105,7 @@ resource "proxmox_vm_qemu" "k8s_master" {
   automatic_reboot = true
 
   # Cloud-Init configuration
-  cicustom   = "vendor=local:snippets/${local.cluster_type}-master.yaml" # /var/lib/vz/snippets/
+  cicustom   = "vendor=local:snippets/${local.cluster_type}-master-${each.value.cluster}.yaml" # /var/lib/vz/snippets/
   ciupgrade  = true
   nameserver = var.nameserver
   ipconfig0  = "ip=${each.value.ip}/${each.value.cidr_prefix},gw=${var.gateway}"
@@ -128,22 +153,27 @@ resource "proxmox_vm_qemu" "k8s_master" {
 }
 
 resource "local_file" "downstream_worker" {
-  filename = "/tmp/downstream-worker.yaml"
+  for_each = toset(data.terraform_remote_state.rancher.outputs.downstream_clusters)
+
+  filename = "/tmp/downstream-worker-${each.key}.yaml"
   content = templatefile("${path.module}/cloud-init/downstream-worker.yaml.tftpl",
     {
-      ubuntu_mirror = local.ubuntu_mirror
+      ubuntu_mirror    = local.ubuntu_mirror,
+      registration_cmd = data.terraform_remote_state.rancher.outputs.downstream_clusters_tokens[each.key]
     }
   )
 }
 
 resource "null_resource" "deploy_cloud_init_scripts_workers" {
-  for_each = { for pve_node in var.pve_nodes : pve_node.name => pve_node }
+  for_each = { for pve_node in data.terraform_remote_state.upstream.outputs.pve_nodes : pve_node.name => pve_node }
 
   provisioner "local-exec" {
     command = <<EOF
       set -x
 
-      scp /tmp/downstream-worker.yaml root@${each.value.ip}:/var/lib/vz/snippets/
+      for cluster in ${local.clusters_list}; do
+        scp /tmp/downstream-worker-$cluster.yaml root@${each.value.ip}:/var/lib/vz/snippets/
+      done
     EOF
   }
 
@@ -168,7 +198,7 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   automatic_reboot = true
 
   # Cloud-Init configuration
-  cicustom   = "vendor=local:snippets/${local.cluster_type}-worker.yaml" # /var/lib/vz/snippets/
+  cicustom   = "vendor=local:snippets/${local.cluster_type}-worker-${each.value.cluster}.yaml" # /var/lib/vz/snippets/
   ciupgrade  = true
   nameserver = var.nameserver
   ipconfig0  = "ip=${each.value.ip}/${each.value.cidr_prefix},gw=${var.gateway}"
