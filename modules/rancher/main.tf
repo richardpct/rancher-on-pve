@@ -131,10 +131,17 @@ resource "rancher2_cluster_v2" "downstream_clusters" {
   rke_config {
     machine_global_config = yamlencode({
       cni                 = "cilium"
-      disable-kube-proxy  = false
+      disable-kube-proxy  = true
       etcd-expose-metrics = false
       ingress-controller  = "traefik"
     })
+
+    chart_values = <<EOF
+rke2-cilium:
+  kubeProxyReplacement: "true"
+  k8sServiceHost: "127.0.0.1"
+  k8sServicePort: 6443
+EOF
   }
 
   depends_on = [rancher2_setting.agent_tls_mode]
