@@ -72,20 +72,20 @@ variable "pve_nodes" {
 
 variable "k8s_masters" {
   type = list(object({
-    name         = string
-    vmid         = number
-    ip           = string
-    cidr_prefix  = number
-    target_node  = string
+    name        = string
+    vmid        = number
+    ip          = string
+    cidr_prefix = number
+    target_node = string
   }))
 }
 
 variable "k8s_workers" {
   type = list(object({
-    name         = string
-    vmid         = number
-    ip           = string
-    cidr_prefix  = number
-    target_node  = string
+    name        = string
+    vmid        = number
+    ip          = string
+    cidr_prefix = number
+    target_node = string
   }))
 }

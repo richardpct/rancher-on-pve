@@ -63,7 +63,7 @@ resource "local_file" "downstream_master" {
   for_each = toset(data.terraform_remote_state.rancher.outputs.downstream_clusters)
 
   filename = "/tmp/downstream-master-${each.key}.yaml"
-  content  = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
+  content = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
     {
       ubuntu_mirror    = local.ubuntu_mirror,
       registration_cmd = data.terraform_remote_state.rancher.outputs.downstream_clusters_tokens[each.key]

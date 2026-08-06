@@ -75,22 +75,22 @@ variable "is_prod" {
 
 variable "k8s_masters" {
   type = list(object({
-    name         = string
-    vmid         = number
-    ip           = string
-    cidr_prefix  = number
-    target_node  = string
-    cluster      = string
+    name        = string
+    vmid        = number
+    ip          = string
+    cidr_prefix = number
+    target_node = string
+    cluster     = string
   }))
 }
 
 variable "k8s_workers" {
   type = list(object({
-    name         = string
-    vmid         = number
-    ip           = string
-    cidr_prefix  = number
-    target_node  = string
-    cluster      = string
+    name        = string
+    vmid        = number
+    ip          = string
+    cidr_prefix = number
+    target_node = string
+    cluster     = string
   }))
 }
