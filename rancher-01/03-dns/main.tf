@@ -4,5 +4,7 @@ module "dns" {
   bucket       = var.bucket
   my_domain    = var.my_domain
   rancher_ip   = "192.168.1.41"
-  applications = ["rancher"]
+  apps_vip     = "192.168.1.131"
+  rancher      = ["rancher"]
+  applications = ["argocd"]
 }

@@ -138,9 +138,11 @@ resource "rancher2_cluster_v2" "downstream_clusters" {
 
     chart_values = <<EOF
 rke2-cilium:
-  kubeProxyReplacement: "true"
+  kubeProxyReplacement: true
   k8sServiceHost: "127.0.0.1"
   k8sServicePort: 6443
+  l2announcements:
+    enabled: true
 EOF
   }
 
