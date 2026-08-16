@@ -52,6 +52,30 @@ resource "kubernetes_secret_v1" "tls_rancher_ingress" {
   depends_on = [kubernetes_namespace_v1.cattle_system]
 }
 
+resource "kubernetes_namespace_v1" "argocd" {
+  metadata {
+    name = "argocd"
+  }
+
+  depends_on = [null_resource.wait_kubernetes_ready]
+}
+
+resource "kubernetes_secret_v1" "tls_argocd_ingress" {
+  metadata {
+    name      = "tls-argocd-ingress"
+    namespace = "argocd"
+  }
+
+  type = "kubernetes.io/tls"
+
+  data = {
+    "tls.crt" = data.terraform_remote_state.certificate.outputs.wildcard_certificate
+    "tls.key" = data.terraform_remote_state.certificate.outputs.wildcard_private_key
+  }
+
+  depends_on = [kubernetes_namespace_v1.argocd]
+}
+
 resource "helm_release" "rancher" {
   name         = "rancher"
   repository   = "https://releases.rancher.com/server-charts/stable"

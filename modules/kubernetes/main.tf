@@ -18,27 +18,27 @@ data "terraform_remote_state" "rancher" {
   }
 }
 
-#resource "helm_release" "argo_cd" {
-#  name             = "argo-cd"
-#  repository       = "https://argoproj.github.io/argo-helm"
-#  chart            = "argo-cd"
-#  namespace        = "argocd"
-#  create_namespace = true
-#  force_update     = true
-#
-#  values = [
-#    "${file("${path.module}/helm-values/argocd.yaml")}"
-#  ]
-#}
-#
-#resource "helm_release" "argocd_infra" {
-#  name             = "argocd-infra"
-#  repository       = "https://argoproj.github.io/argo-helm"
-#  chart            = "argocd-apps"
-#  namespace        = "argocd"
-#  create_namespace = true
-#  force_update     = true
-#
+resource "helm_release" "argo_cd" {
+  name             = "argo-cd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  namespace        = "argocd"
+  create_namespace = true
+  force_update     = true
+
+  values = [
+    "${file("${path.module}/helm-values/argocd.yaml")}"
+  ]
+}
+
+resource "helm_release" "argocd_infra" {
+  name             = "argocd-infra"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argocd-apps"
+  namespace        = "argocd"
+  create_namespace = true
+  force_update     = true
+
 #  values = [
 #    templatefile("${path.module}/helm-values/argocd-infra.yaml.tftpl",
 #      {
@@ -46,9 +46,9 @@ data "terraform_remote_state" "rancher" {
 #      }
 #    )
 #  ]
-#
-#  depends_on = [helm_release.argo_cd]
-#}
+
+  depends_on = [helm_release.argo_cd]
+}
 
 resource "null_resource" "install_policy" {
   for_each = { for downstream_cluster in data.terraform_remote_state.rancher.outputs.downstream_clusters: downstream_cluster.name => downstream_cluster }
