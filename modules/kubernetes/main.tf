@@ -51,11 +51,11 @@ data "terraform_remote_state" "rancher" {
 #}
 
 resource "null_resource" "install_policy" {
-  for_each = toset(data.terraform_remote_state.rancher.outputs.downstream_clusters)
+  for_each = { for downstream_cluster in data.terraform_remote_state.rancher.outputs.downstream_clusters: downstream_cluster.name => downstream_cluster }
 
   provisioner "local-exec" {
     command = <<EOF
-      KUBECONFIG=~/.kube/${each.key} kubectl apply --server-side -f - <<KUBE
+      KUBECONFIG=~/.kube/${each.value.name} kubectl apply --server-side -f - <<KUBE
 apiVersion: "cilium.io/v2alpha1"
 kind: CiliumL2AnnouncementPolicy
 metadata:
@@ -76,21 +76,23 @@ KUBE
 }
 
 resource "local_file" "ippool" {
-  filename = "/tmp/ippool.yaml"
-  content = templatefile("${path.module}/manifests/ippool.yaml.tftpl",
+  for_each = { for downstream_cluster in data.terraform_remote_state.rancher.outputs.downstream_clusters: downstream_cluster.name => downstream_cluster }
+
+  filename = "/tmp/ippool-${each.value.name}.yaml"
+  content  = templatefile("${path.module}/manifests/ippool.yaml.tftpl",
     {
-      start_ip = var.start_cilium_vip
-      stop_ip  = var.stop_cilium_vip
+      start_ip = each.value.start_cilium_vip
+      stop_ip  = each.value.stop_cilium_vip
     }
   )
 }
 
 resource "null_resource" "install_ciliuml2announcement" {
-  for_each = toset(data.terraform_remote_state.rancher.outputs.downstream_clusters)
+  for_each = { for downstream_cluster in data.terraform_remote_state.rancher.outputs.downstream_clusters: downstream_cluster.name => downstream_cluster }
 
   provisioner "local-exec" {
     command = <<EOF
-      KUBECONFIG=~/.kube/${each.key} kubectl apply -f /tmp/ippool.yaml
+      KUBECONFIG=~/.kube/${each.value.name} kubectl apply -f /tmp/ippool-${each.value.name}.yaml
     EOF
   }
 

@@ -27,16 +27,6 @@ variable "my_domain" {
   description = "my domain name"
 }
 
-variable "start_cilium_vip" {
-  type        = string
-  description = "start cilium vip"
-}
-
-variable "stop_cilium_vip" {
-  type        = string
-  description = "stop cilium vip"
-}
-
 variable "argocd_pass" {
   type        = string
   description = "argocd password"

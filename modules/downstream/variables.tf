@@ -15,7 +15,7 @@ locals {
   upstream_master      = "192.168.1.31"
   kube_config_upstream = "~/.kube/local"
   cluster_type         = "downstream"
-  clusters_list        = join(" ", data.terraform_remote_state.rancher.outputs.downstream_clusters)
+  clusters_list        = join(" ", data.terraform_remote_state.rancher.outputs.downstream_clusters[*].name)
 }
 
 variable "region" {

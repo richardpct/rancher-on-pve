@@ -60,10 +60,10 @@ resource "null_resource" "ssh_keys_cleanup" {
 }
 
 resource "local_file" "downstream_master" {
-  for_each = toset(data.terraform_remote_state.rancher.outputs.downstream_clusters)
+  for_each = { for downstream_cluster in data.terraform_remote_state.rancher.outputs.downstream_clusters: downstream_cluster.name => downstream_cluster }
 
-  filename = "/tmp/downstream-master-${each.key}.yaml"
-  content = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
+  filename = "/tmp/downstream-master-${each.value.name}.yaml"
+  content  = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
     {
       ubuntu_mirror    = local.ubuntu_mirror,
       registration_cmd = data.terraform_remote_state.rancher.outputs.downstream_clusters_tokens[each.key]
@@ -88,7 +88,8 @@ resource "null_resource" "deploy_cloud_init_scripts_masters" {
 }
 
 resource "proxmox_vm_qemu" "k8s_master" {
-  for_each    = { for k8s_master in var.k8s_masters : k8s_master.name => k8s_master }
+  for_each = { for k8s_master in var.k8s_masters : k8s_master.name => k8s_master }
+
   vmid        = each.value.vmid
   name        = each.value.name
   tags        = "rke2-master"
@@ -153,10 +154,10 @@ resource "proxmox_vm_qemu" "k8s_master" {
 }
 
 resource "local_file" "downstream_worker" {
-  for_each = toset(data.terraform_remote_state.rancher.outputs.downstream_clusters)
+  for_each = { for downstream_cluster in data.terraform_remote_state.rancher.outputs.downstream_clusters: downstream_cluster.name => downstream_cluster }
 
-  filename = "/tmp/downstream-worker-${each.key}.yaml"
-  content = templatefile("${path.module}/cloud-init/downstream-worker.yaml.tftpl",
+  filename = "/tmp/downstream-worker-${each.value.name}.yaml"
+  content  = templatefile("${path.module}/cloud-init/downstream-worker.yaml.tftpl",
     {
       ubuntu_mirror    = local.ubuntu_mirror,
       registration_cmd = data.terraform_remote_state.rancher.outputs.downstream_clusters_tokens[each.key]
@@ -181,7 +182,8 @@ resource "null_resource" "deploy_cloud_init_scripts_workers" {
 }
 
 resource "proxmox_vm_qemu" "k8s_worker" {
-  for_each    = { for k8s_worker in var.k8s_workers : k8s_worker.name => k8s_worker }
+  for_each = { for k8s_worker in var.k8s_workers : k8s_worker.name => k8s_worker }
+
   vmid        = each.value.vmid
   name        = each.value.name
   tags        = "rke2-worker"

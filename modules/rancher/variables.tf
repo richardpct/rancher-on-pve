@@ -33,6 +33,9 @@ variable "rancher_pass" {
 }
 
 variable "downstream_clusters" {
-  type        = list(string)
-  description = "downstream clusters list"
+  type = list(object({
+    name             = string
+    start_cilium_vip = string
+    stop_cilium_vip  = string
+  }))
 }

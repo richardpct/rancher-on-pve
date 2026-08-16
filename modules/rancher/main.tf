@@ -122,12 +122,12 @@ resource "rancher2_setting" "agent_tls_mode" {
 }
 
 resource "rancher2_cluster_v2" "downstream_clusters" {
-  for_each              = toset(var.downstream_clusters)
-  name                  = each.key
+  for_each = { for downstream_cluster in var.downstream_clusters : downstream_cluster.name => downstream_cluster }
+
+  name                  = each.value.name
   kubernetes_version    = "v1.35.6+rke2r1"
   enable_network_policy = false
-  // There are two builtin PSACT: rancher-privileged and rancher-restricted. You can also create new ones.
-  #default_pod_security_admission_configuration_template_name = "rancher-restricted"
+
   rke_config {
     machine_global_config = yamlencode({
       cni                 = "cilium"
