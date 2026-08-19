@@ -31,23 +31,46 @@ resource "helm_release" "argo_cd" {
   ]
 }
 
-resource "helm_release" "argocd_infra" {
-  name             = "argocd-infra"
+resource "helm_release" "argocd_appset" {
+  name             = "argocd-appset"
   repository       = "https://argoproj.github.io/argo-helm"
   chart            = "argocd-apps"
   namespace        = "argocd"
   create_namespace = true
   force_update     = true
-
-#  values = [
-#    templatefile("${path.module}/helm-values/argocd-infra.yaml.tftpl",
-#      {
-#        ceph_cluster_id = var.ceph_cluster_id
-#      }
-#    )
-#  ]
+  values           = ["${file("${path.module}/helm-values/argocd-appset.yaml")}"]
 
   depends_on = [helm_release.argo_cd]
+}
+
+resource "kubernetes_secret_v1" "argocd_cluster_secrets" {
+  for_each = data.terraform_remote_state.rancher.outputs.rancher2_downstream_clusters
+
+  metadata {
+    name      = "argocd-cluster-${each.value.name}"
+    namespace = "argocd"
+
+    labels = {
+      "argocd.argoproj.io/secret-type" = "cluster"
+      "env"                            = "downstream"
+    }
+  }
+
+  data = {
+    name   = each.value.name
+    server = "https://rancher.${var.my_domain}/k8s/clusters/${each.value.cluster_v1_id}"
+
+    config = jsonencode({
+      bearerToken = data.terraform_remote_state.rancher.outputs.rancher_token_argocd
+      tlsClientConfig = {
+        insecure = true
+      }
+    })
+  }
+
+  type = "Opaque"
+
+  depends_on = [helm_release.argocd_appset]
 }
 
 resource "null_resource" "install_policy" {

@@ -145,6 +145,11 @@ resource "rancher2_setting" "agent_tls_mode" {
   depends_on = [rancher2_bootstrap.admin_bis]
 }
 
+resource "rancher2_token" "argocd" {
+  description = "token for ArgoCD to manage downstream clusters"
+  depends_on  = [rancher2_setting.agent_tls_mode]
+}
+
 resource "rancher2_cluster_v2" "downstream_clusters" {
   for_each = { for downstream_cluster in var.downstream_clusters : downstream_cluster.name => downstream_cluster }
 
