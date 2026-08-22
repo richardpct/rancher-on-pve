@@ -32,3 +32,8 @@ variable "rancher_pass" {
   type        = string
   description = "rancher password"
 }
+
+variable "argocd_pass" {
+  type        = string
+  description = "argocd password"
+}

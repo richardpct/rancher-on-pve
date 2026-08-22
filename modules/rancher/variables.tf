@@ -32,6 +32,11 @@ variable "rancher_pass" {
   description = "rancher password"
 }
 
+variable "argocd_pass" {
+  type        = string
+  description = "argocd password"
+}
+
 variable "downstream_clusters" {
   type = list(object({
     name             = string
