@@ -63,7 +63,7 @@ resource "kubernetes_secret_v1" "argocd_cluster_secrets" {
     config = jsonencode({
       bearerToken = data.terraform_remote_state.rancher.outputs.rancher_token_argocd
       tlsClientConfig = {
-        insecure = true
+        insecure = false
       }
     })
   }

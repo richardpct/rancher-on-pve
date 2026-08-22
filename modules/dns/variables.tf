@@ -13,22 +13,9 @@ variable "my_domain" {
   description = "my domain name"
 }
 
-variable "rancher" {
-  type        = list(string)
-  description = "rancher name dns"
-}
-
 variable "applications" {
-  type        = list(string)
-  description = "applications list"
-}
-
-variable "rancher_ip" {
-  type        = string
-  description = "rancher ip"
-}
-
-variable "apps_vip" {
-  type        = string
-  description = "apps vip"
+  type = list(object({
+    name = string
+    ip   = string
+  }))
 }

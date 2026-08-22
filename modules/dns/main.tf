@@ -2,20 +2,12 @@ data "aws_route53_zone" "main" {
   name = var.my_domain
 }
 
-resource "aws_route53_record" "rancher" {
-  count   = length(var.rancher)
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.rancher[count.index]
-  type    = "A"
-  ttl     = "300"
-  records = [var.rancher_ip]
-}
-
 resource "aws_route53_record" "applications" {
-  count   = length(var.applications)
+  for_each = { for application in var.applications : application.name => application }
+
   zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.applications[count.index]
+  name    = each.value.name
   type    = "A"
   ttl     = "300"
-  records = [var.apps_vip]
+  records = [each.value.ip]
 }

@@ -18,6 +18,6 @@ module "upstream" {
     { name = "local-master-01", vmid = 101, ip = "192.168.1.31", cidr_prefix = 24, target_node = "pve-01" }
   ]
   k8s_workers = [
-    { name = "local-worker-01", vmid = 201, ip = "192.168.1.41", cidr_prefix = 24, target_node = "pve-01" }
+    { name = "local-worker-01", vmid = 201, ip = "192.168.1.41", cidr_prefix = 24, target_node = "pve-02" }
   ]
 }

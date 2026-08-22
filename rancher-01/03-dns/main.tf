@@ -3,8 +3,10 @@ module "dns" {
   region       = var.region
   bucket       = var.bucket
   my_domain    = var.my_domain
-  rancher_ip   = "192.168.1.41"
-  apps_vip     = "192.168.1.131"
-  rancher      = ["rancher", "argocd"]
-  applications = ["prometheus"]
+  applications = [
+    { name = "rancher",   ip = "192.168.1.41" },
+    { name = "argocd",    ip = "192.168.1.41" },
+    { name = "andromeda", ip = "192.168.1.101" },
+    { name = "phoenix",   ip = "192.168.1.111" }
+  ]
 }
