@@ -163,6 +163,7 @@ resource "rancher2_cluster_v2" "downstream_clusters" {
       disable-kube-proxy  = true
       etcd-expose-metrics = false
       ingress-controller  = "traefik"
+      #disable             = ["rke2-ingress-nginx"]
     })
 
     chart_values = <<EOF
@@ -172,6 +173,8 @@ rke2-cilium:
   k8sServicePort: 6443
   l2announcements:
     enabled: true
+#  gatewayAPI:
+#    enabled: true
 EOF
   }
 

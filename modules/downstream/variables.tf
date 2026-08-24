@@ -28,6 +28,11 @@ variable "bucket" {
   description = "bucket"
 }
 
+variable "key_certificate" {
+  type        = string
+  description = "bucket certificate key"
+}
+
 variable "key_upstream" {
   type        = string
   description = "bucket upstream key"
@@ -66,6 +71,16 @@ variable "pm_user" {
 variable "pm_password" {
   type        = string
   description = "pm password"
+}
+
+variable "provider_clusters" {
+  type        = set(string)
+  description = "downstream cluster list"
+}
+
+variable "clusters" {
+  type        = set(string)
+  description = "downstream cluster list"
 }
 
 variable "is_prod" {

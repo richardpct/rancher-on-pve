@@ -30,6 +30,8 @@ plan: init ## Dry run
 .PHONY: destroy
 destroy: ## Destroy the infrastructure
 	. $(SECRET_ENV) && \
+	tofu state ls | grep kubernetes | while read; do tofu state rm $$REPLY; done
+	. $(SECRET_ENV) && \
 	tofu destroy -auto-approve
 	@rm -fv *.backup
 

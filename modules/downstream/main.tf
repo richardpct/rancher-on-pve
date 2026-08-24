@@ -1,3 +1,13 @@
+data "terraform_remote_state" "certificate" {
+  backend = "s3"
+
+  config = {
+    bucket = var.bucket
+    key    = var.key_certificate
+    region = var.region
+  }
+}
+
 data "terraform_remote_state" "upstream" {
   backend = "s3"
 
@@ -247,4 +257,38 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   }
 
   depends_on = [null_resource.update_images, null_resource.deploy_cloud_init_scripts_workers]
+}
+
+resource "null_resource" "wait_kubernetes_ready" {
+  for_each = { for downstream_cluster in data.terraform_remote_state.rancher.outputs.downstream_clusters: downstream_cluster.name => downstream_cluster }
+
+  provisioner "local-exec" {
+    command = <<EOF
+      while ! KUBECONFIG=~/.kube/${each.value.name} kubectl cluster-info; do
+        sleep 30
+      done
+    EOF
+  }
+
+  depends_on = [proxmox_vm_qemu.k8s_worker]
+}
+
+resource "kubernetes_secret_v1" "default_tls_cert" {
+  for_each = var.clusters
+
+  provider = kubernetes.cluster[each.key]
+
+  metadata {
+    name      = "default-tls-cert"
+    namespace = "kube-system"
+  }
+
+  type = "kubernetes.io/tls"
+
+  data = {
+    "tls.crt" = data.terraform_remote_state.certificate.outputs.wildcard_certificate
+    "tls.key" = data.terraform_remote_state.certificate.outputs.wildcard_private_key
+  }
+
+  depends_on = [null_resource.wait_kubernetes_ready]
 }
