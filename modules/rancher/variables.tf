@@ -27,6 +27,11 @@ variable "my_domain" {
   description = "my domain name"
 }
 
+variable "kubernetes_version" {
+  type        = string
+  description = "kubernetes version"
+}
+
 variable "rancher_pass" {
   type        = string
   description = "rancher password"

@@ -154,7 +154,7 @@ resource "rancher2_cluster_v2" "downstream_clusters" {
   for_each = { for downstream_cluster in var.downstream_clusters : downstream_cluster.name => downstream_cluster }
 
   name                  = each.value.name
-  kubernetes_version    = "v1.35.6+rke2r1"
+  kubernetes_version    = var.kubernetes_version
   enable_network_policy = false
 
   rke_config {
