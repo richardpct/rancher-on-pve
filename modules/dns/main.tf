@@ -3,11 +3,11 @@ data "aws_route53_zone" "main" {
 }
 
 resource "aws_route53_record" "applications" {
-  for_each = { for application in var.applications : application.name => application }
+  for_each = var.dns_record
 
   zone_id = data.aws_route53_zone.main.zone_id
-  name    = each.value.name
+  name    = each.key
   type    = "A"
   ttl     = "300"
-  records = [each.value.ip]
+  records = [each.value]
 }

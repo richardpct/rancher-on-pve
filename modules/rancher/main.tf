@@ -8,6 +8,16 @@ data "terraform_remote_state" "certificate" {
   }
 }
 
+data "terraform_remote_state" "dns" {
+  backend = "s3"
+
+  config = {
+    bucket = var.bucket
+    key    = var.key_dns
+    region = var.region
+  }
+}
+
 data "terraform_remote_state" "upstream" {
   backend = "s3"
 
@@ -180,7 +190,7 @@ rke2-traefik:
     spec:
       type: LoadBalancer
     annotations:
-      io.cilium/lb-ipam-ips: "${each.value.ingress_vip}"
+      io.cilium/lb-ipam-ips: data.terraform_remote_state.dns.outputs.dns_record[each.value.name]
 
   tlsStore:
     default:

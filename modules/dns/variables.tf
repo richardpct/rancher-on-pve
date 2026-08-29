@@ -13,9 +13,6 @@ variable "my_domain" {
   description = "my domain name"
 }
 
-variable "applications" {
-  type = list(object({
-    name = string
-    ip   = string
-  }))
+variable "dns_record" {
+  type = map(string)
 }
