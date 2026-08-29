@@ -9,8 +9,5 @@ module "rancher" {
   kubernetes_version  = "v1.35.6+rke2r1"
   rancher_pass        = var.rancher_pass
   argocd_pass         = var.argocd_pass
-  downstream_clusters = [
-    { name = "andromeda", ingress_vip = "192.168.1.101"},
-    { name = "phoenix",   ingress_vip = "192.168.1.111"}
-  ]
+  downstream_clusters = ["andromeda", "phoenix"]
 }

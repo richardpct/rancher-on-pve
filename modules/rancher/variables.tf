@@ -48,8 +48,5 @@ variable "argocd_pass" {
 }
 
 variable "downstream_clusters" {
-  type = list(object({
-    name        = string
-    ingress_vip = string
-  }))
+  type = set(string)
 }

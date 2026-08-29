@@ -70,9 +70,9 @@ resource "null_resource" "ssh_keys_cleanup" {
 }
 
 resource "local_file" "downstream_master" {
-  for_each = { for downstream_cluster in data.terraform_remote_state.rancher.outputs.downstream_clusters: downstream_cluster.name => downstream_cluster }
+  for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
 
-  filename = "/tmp/downstream-master-${each.value.name}.yaml"
+  filename = "/tmp/downstream-master-${each.key}.yaml"
   content  = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
     {
       ubuntu_mirror    = local.ubuntu_mirror,
@@ -164,9 +164,9 @@ resource "proxmox_vm_qemu" "k8s_master" {
 }
 
 resource "local_file" "downstream_worker" {
-  for_each = { for downstream_cluster in data.terraform_remote_state.rancher.outputs.downstream_clusters: downstream_cluster.name => downstream_cluster }
+  for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
 
-  filename = "/tmp/downstream-worker-${each.value.name}.yaml"
+  filename = "/tmp/downstream-worker-${each.key}.yaml"
   content  = templatefile("${path.module}/cloud-init/downstream-worker.yaml.tftpl",
     {
       ubuntu_mirror    = local.ubuntu_mirror,
@@ -260,11 +260,11 @@ resource "proxmox_vm_qemu" "k8s_worker" {
 }
 
 resource "null_resource" "wait_kubernetes_ready" {
-  for_each = { for downstream_cluster in data.terraform_remote_state.rancher.outputs.downstream_clusters: downstream_cluster.name => downstream_cluster }
+  for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
 
   provisioner "local-exec" {
     command = <<EOF
-      while ! KUBECONFIG=~/.kube/${each.value.name} kubectl cluster-info; do
+      while ! KUBECONFIG=~/.kube/${each.key} kubectl cluster-info; do
         sleep 30
       done
     EOF

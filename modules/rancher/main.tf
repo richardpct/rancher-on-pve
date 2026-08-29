@@ -161,9 +161,9 @@ resource "rancher2_token" "argocd" {
 }
 
 resource "rancher2_cluster_v2" "downstream_clusters" {
-  for_each = { for downstream_cluster in var.downstream_clusters : downstream_cluster.name => downstream_cluster }
+  for_each = var.downstream_clusters
 
-  name                  = each.value.name
+  name                  = each.key
   kubernetes_version    = var.kubernetes_version
   enable_network_policy = false
 
