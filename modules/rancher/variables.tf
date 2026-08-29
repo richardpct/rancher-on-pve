@@ -39,8 +39,7 @@ variable "argocd_pass" {
 
 variable "downstream_clusters" {
   type = list(object({
-    name             = string
-    start_cilium_vip = string
-    stop_cilium_vip  = string
+    name        = string
+    ingress_vip = string
   }))
 }

@@ -163,7 +163,6 @@ resource "rancher2_cluster_v2" "downstream_clusters" {
       disable-kube-proxy  = true
       etcd-expose-metrics = false
       ingress-controller  = "traefik"
-      #disable             = ["rke2-ingress-nginx"]
     })
 
     chart_values = <<EOF
@@ -173,8 +172,20 @@ rke2-cilium:
   k8sServicePort: 6443
   l2announcements:
     enabled: true
-#  gatewayAPI:
-#    enabled: true
+
+rke2-traefik:
+  service:
+    labels:
+      color: blue
+    spec:
+      type: LoadBalancer
+    annotations:
+      io.cilium/lb-ipam-ips: "${each.value.ingress_vip}"
+
+  tlsStore:
+    default:
+      defaultCertificate:
+        secretName: default-tls-cert
 EOF
   }
 
@@ -243,7 +254,14 @@ resource "helm_release" "argocd_appset" {
   namespace        = "argocd"
   create_namespace = true
   force_update     = true
-  values           = ["${file("${path.module}/helm-values/argocd-appset.yaml")}"]
+
+  values = [
+    templatefile("${path.module}/helm-values/argocd-appset.yaml.tftpl",
+      {
+        domain = var.my_domain
+      }
+    )
+  ]
 
   depends_on = [helm_release.argo_cd]
 }
