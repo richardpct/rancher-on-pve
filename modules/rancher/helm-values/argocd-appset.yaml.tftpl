@@ -36,7 +36,7 @@ applicationsets:
               stop_cilium_vip: "{{ .stop_cilium_vip }}"
         destination:
           name: '{{ .name }}'
-          namespace: web-apps
+          namespace: web
         syncPolicy:
           automated:
             prune: true
@@ -84,7 +84,7 @@ applicationsets:
               replicaCount: {{ .replicas }}
         destination:
           name: '{{ .name }}'
-          namespace: web-apps
+          namespace: web
         syncPolicy:
           automated:
             prune: true
