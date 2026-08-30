@@ -158,7 +158,7 @@ rke2-cilium:
 rke2-traefik:
   service:
     labels:
-      color: blue
+      service: web
     spec:
       type: LoadBalancer
     annotations:
