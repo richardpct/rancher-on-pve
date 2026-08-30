@@ -124,7 +124,6 @@ resource "proxmox_vm_qemu" "k8s_master" {
   ciuser     = "ubuntu"
   sshkeys    = var.public_ssh_key
 
-  # Most cloud-init images require a serial device for their display
   serial {
     id = 0
   }
@@ -139,7 +138,6 @@ resource "proxmox_vm_qemu" "k8s_master" {
       }
     }
     ide {
-      # Some images require a cloud-init disk on the IDE controller, others on the SCSI or SATA controller
       ide1 {
         cloudinit {
           storage = local.storage
@@ -218,7 +216,6 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   ciuser     = "ubuntu"
   sshkeys    = var.public_ssh_key
 
-  # Most cloud-init images require a serial device for their display
   serial {
     id = 0
   }
@@ -226,16 +223,13 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   disks {
     scsi {
       scsi0 {
-        # We have to specify the disk from our template, else Terraform will think it's not supposed to be there
         disk {
           storage = local.storage
-          # The size of the disk should be at least as big as the disk in the template. If it's smaller, the disk will be recreated
-          size = local.worker_disk
+          size    = local.worker_disk
         }
       }
     }
     ide {
-      # Some images require a cloud-init disk on the IDE controller, others on the SCSI or SATA controller
       ide1 {
         cloudinit {
           storage = local.storage

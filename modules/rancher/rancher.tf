@@ -62,30 +62,6 @@ resource "kubernetes_secret_v1" "tls_rancher_ingress" {
   depends_on = [kubernetes_namespace_v1.cattle_system]
 }
 
-resource "kubernetes_namespace_v1" "argocd" {
-  metadata {
-    name = "argocd"
-  }
-
-  depends_on = [null_resource.wait_kubernetes_ready]
-}
-
-resource "kubernetes_secret_v1" "tls_argocd_ingress" {
-  metadata {
-    name      = "tls-argocd-ingress"
-    namespace = "argocd"
-  }
-
-  type = "kubernetes.io/tls"
-
-  data = {
-    "tls.crt" = data.terraform_remote_state.certificate.outputs.wildcard_certificate
-    "tls.key" = data.terraform_remote_state.certificate.outputs.wildcard_private_key
-  }
-
-  depends_on = [kubernetes_namespace_v1.argocd]
-}
-
 resource "helm_release" "rancher" {
   name         = "rancher"
   repository   = "https://releases.rancher.com/server-charts/stable"
@@ -134,6 +110,7 @@ resource "rancher2_bootstrap" "admin" {
   depends_on = [null_resource.wait_rancher_ready]
 }
 
+# set up a password shorter than the default length
 resource "rancher2_setting" "password_min_length" {
   name  = "password-min-length"
   value = "10"
@@ -153,11 +130,6 @@ resource "rancher2_setting" "agent_tls_mode" {
   value = "system-store"
 
   depends_on = [rancher2_bootstrap.admin_bis]
-}
-
-resource "rancher2_token" "argocd" {
-  description = "token for ArgoCD to manage downstream clusters"
-  depends_on  = [rancher2_setting.agent_tls_mode]
 }
 
 resource "rancher2_cluster_v2" "downstream_clusters" {
@@ -210,68 +182,4 @@ resource "local_sensitive_file" "downstream_kubeconfig" {
   file_permission = "0600"
 
   depends_on = [rancher2_cluster_v2.downstream_clusters]
-}
-
-resource "kubernetes_secret_v1" "argocd_cluster_secrets" {
-  for_each = rancher2_cluster_v2.downstream_clusters
-
-  metadata {
-    name      = "argocd-cluster-${each.value.name}"
-    namespace = "argocd"
-
-    labels = {
-      "argocd.argoproj.io/secret-type" = "cluster"
-      "env"                            = "downstream"
-    }
-  }
-
-  data = {
-    name   = each.value.name
-    server = "https://rancher.${var.my_domain}/k8s/clusters/${each.value.cluster_v1_id}"
-
-    config = jsonencode({
-      bearerToken = rancher2_token.argocd.token
-      tlsClientConfig = {
-        insecure = false
-      }
-    })
-  }
-
-  type = "Opaque"
-
-  depends_on = [local_sensitive_file.downstream_kubeconfig]
-}
-
-resource "helm_release" "argo_cd" {
-  name             = "argo-cd"
-  repository       = "https://argoproj.github.io/argo-helm"
-  chart            = "argo-cd"
-  namespace        = "argocd"
-  create_namespace = true
-  force_update     = true
-
-  values = [
-    "${file("${path.module}/helm-values/argocd.yaml")}"
-  ]
-
-  depends_on = [kubernetes_secret_v1.argocd_cluster_secrets]
-}
-
-resource "helm_release" "argocd_appset" {
-  name             = "argocd-appset"
-  repository       = "https://argoproj.github.io/argo-helm"
-  chart            = "argocd-apps"
-  namespace        = "argocd"
-  create_namespace = true
-  force_update     = true
-
-  values = [
-    templatefile("${path.module}/helm-values/argocd-appset.yaml.tftpl",
-      {
-        domain = var.my_domain
-      }
-    )
-  ]
-
-  depends_on = [helm_release.argo_cd]
 }

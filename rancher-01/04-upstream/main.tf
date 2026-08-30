@@ -1,14 +1,15 @@
 module "upstream" {
-  source         = "../../modules/upstream"
-  region         = var.region
-  bucket         = var.bucket
-  nameserver     = var.nameserver
-  gateway        = var.gateway
-  public_ssh_key = var.public_ssh_key
-  pm_api_url     = "https://192.168.1.21:8006/api2/json"
-  pm_user        = var.pm_user
-  pm_password    = var.pm_password
-  is_prod        = "false"
+  source             = "../../modules/upstream"
+  region             = var.region
+  bucket             = var.bucket
+  nameserver         = var.nameserver
+  gateway            = var.gateway
+  public_ssh_key     = var.public_ssh_key
+  pm_api_url         = "https://192.168.1.21:8006/api2/json"
+  pm_user            = var.pm_user
+  pm_password        = var.pm_password
+  is_prod            = "false"
+  kubernetes_version = "v1.35.6+rke2r1"
   pve_nodes = [
     { name = "pve-01", ip = "192.168.1.21", cloudinit_img_id = 9001 },
     { name = "pve-02", ip = "192.168.1.22", cloudinit_img_id = 9002 },

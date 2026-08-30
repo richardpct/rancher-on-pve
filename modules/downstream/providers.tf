@@ -7,8 +7,8 @@ provider "proxmox" {
 }
 
 provider "kubernetes" {
-#  for_each = var.clusters
   for_each = var.provider_clusters
+
   alias       = "cluster"
   config_path = "~/.kube/${each.key}"
 }
