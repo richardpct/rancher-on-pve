@@ -3,10 +3,11 @@ data "aws_route53_zone" "main" {
 }
 
 resource "aws_route53_record" "applications" {
-  count   = length(var.applications)
+  for_each = var.dns_record
+
   zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.applications[count.index]
+  name    = each.key
   type    = "A"
   ttl     = "300"
-  records = [var.rancher_ip]
+  records = [each.value]
 }

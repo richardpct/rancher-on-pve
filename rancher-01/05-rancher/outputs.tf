@@ -1,5 +1,6 @@
 output "downstream_clusters" {
-  value = module.rancher.downstream_clusters
+  value     = module.rancher.downstream_clusters
+  sensitive = true
 }
 
 output "downstream_clusters_tokens" {

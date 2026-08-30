@@ -8,6 +8,16 @@ data "terraform_remote_state" "certificate" {
   }
 }
 
+data "terraform_remote_state" "dns" {
+  backend = "s3"
+
+  config = {
+    bucket = var.bucket
+    key    = var.key_dns
+    region = var.region
+  }
+}
+
 data "terraform_remote_state" "upstream" {
   backend = "s3"
 
@@ -100,6 +110,7 @@ resource "rancher2_bootstrap" "admin" {
   depends_on = [null_resource.wait_rancher_ready]
 }
 
+# set up a password shorter than the default length
 resource "rancher2_setting" "password_min_length" {
   name  = "password-min-length"
   value = "10"
@@ -122,12 +133,12 @@ resource "rancher2_setting" "agent_tls_mode" {
 }
 
 resource "rancher2_cluster_v2" "downstream_clusters" {
-  for_each              = toset(var.downstream_clusters)
+  for_each = var.downstream_clusters
+
   name                  = each.key
-  kubernetes_version    = "v1.35.6+rke2r1"
+  kubernetes_version    = var.kubernetes_version
   enable_network_policy = false
-  // There are two builtin PSACT: rancher-privileged and rancher-restricted. You can also create new ones.
-  #default_pod_security_admission_configuration_template_name = "rancher-restricted"
+
   rke_config {
     machine_global_config = yamlencode({
       cni                 = "cilium"
@@ -138,9 +149,25 @@ resource "rancher2_cluster_v2" "downstream_clusters" {
 
     chart_values = <<EOF
 rke2-cilium:
-  kubeProxyReplacement: "true"
+  kubeProxyReplacement: true
   k8sServiceHost: "127.0.0.1"
   k8sServicePort: 6443
+  l2announcements:
+    enabled: true
+
+rke2-traefik:
+  service:
+    labels:
+      service: web
+    spec:
+      type: LoadBalancer
+    annotations:
+      io.cilium/lb-ipam-ips: data.terraform_remote_state.dns.outputs.dns_record[each.value.name]
+
+  tlsStore:
+    default:
+      defaultCertificate:
+        secretName: default-tls-cert
 EOF
   }
 

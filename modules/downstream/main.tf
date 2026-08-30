@@ -1,3 +1,13 @@
+data "terraform_remote_state" "certificate" {
+  backend = "s3"
+
+  config = {
+    bucket = var.bucket
+    key    = var.key_certificate
+    region = var.region
+  }
+}
+
 data "terraform_remote_state" "upstream" {
   backend = "s3"
 
@@ -60,10 +70,10 @@ resource "null_resource" "ssh_keys_cleanup" {
 }
 
 resource "local_file" "downstream_master" {
-  for_each = toset(data.terraform_remote_state.rancher.outputs.downstream_clusters)
+  for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
 
   filename = "/tmp/downstream-master-${each.key}.yaml"
-  content = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
+  content  = templatefile("${path.module}/cloud-init/downstream-master.yaml.tftpl",
     {
       ubuntu_mirror    = local.ubuntu_mirror,
       registration_cmd = data.terraform_remote_state.rancher.outputs.downstream_clusters_tokens[each.key]
@@ -88,7 +98,8 @@ resource "null_resource" "deploy_cloud_init_scripts_masters" {
 }
 
 resource "proxmox_vm_qemu" "k8s_master" {
-  for_each    = { for k8s_master in var.k8s_masters : k8s_master.name => k8s_master }
+  for_each = { for k8s_master in var.k8s_masters : k8s_master.name => k8s_master }
+
   vmid        = each.value.vmid
   name        = each.value.name
   tags        = "rke2-master"
@@ -113,7 +124,6 @@ resource "proxmox_vm_qemu" "k8s_master" {
   ciuser     = "ubuntu"
   sshkeys    = var.public_ssh_key
 
-  # Most cloud-init images require a serial device for their display
   serial {
     id = 0
   }
@@ -128,7 +138,6 @@ resource "proxmox_vm_qemu" "k8s_master" {
       }
     }
     ide {
-      # Some images require a cloud-init disk on the IDE controller, others on the SCSI or SATA controller
       ide1 {
         cloudinit {
           storage = local.storage
@@ -153,10 +162,10 @@ resource "proxmox_vm_qemu" "k8s_master" {
 }
 
 resource "local_file" "downstream_worker" {
-  for_each = toset(data.terraform_remote_state.rancher.outputs.downstream_clusters)
+  for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
 
   filename = "/tmp/downstream-worker-${each.key}.yaml"
-  content = templatefile("${path.module}/cloud-init/downstream-worker.yaml.tftpl",
+  content  = templatefile("${path.module}/cloud-init/downstream-worker.yaml.tftpl",
     {
       ubuntu_mirror    = local.ubuntu_mirror,
       registration_cmd = data.terraform_remote_state.rancher.outputs.downstream_clusters_tokens[each.key]
@@ -181,7 +190,8 @@ resource "null_resource" "deploy_cloud_init_scripts_workers" {
 }
 
 resource "proxmox_vm_qemu" "k8s_worker" {
-  for_each    = { for k8s_worker in var.k8s_workers : k8s_worker.name => k8s_worker }
+  for_each = { for k8s_worker in var.k8s_workers : k8s_worker.name => k8s_worker }
+
   vmid        = each.value.vmid
   name        = each.value.name
   tags        = "rke2-worker"
@@ -206,7 +216,6 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   ciuser     = "ubuntu"
   sshkeys    = var.public_ssh_key
 
-  # Most cloud-init images require a serial device for their display
   serial {
     id = 0
   }
@@ -214,16 +223,13 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   disks {
     scsi {
       scsi0 {
-        # We have to specify the disk from our template, else Terraform will think it's not supposed to be there
         disk {
           storage = local.storage
-          # The size of the disk should be at least as big as the disk in the template. If it's smaller, the disk will be recreated
-          size = local.worker_disk
+          size    = local.worker_disk
         }
       }
     }
     ide {
-      # Some images require a cloud-init disk on the IDE controller, others on the SCSI or SATA controller
       ide1 {
         cloudinit {
           storage = local.storage
@@ -245,4 +251,38 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   }
 
   depends_on = [null_resource.update_images, null_resource.deploy_cloud_init_scripts_workers]
+}
+
+resource "null_resource" "wait_kubernetes_ready" {
+  for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
+
+  provisioner "local-exec" {
+    command = <<EOF
+      while ! KUBECONFIG=~/.kube/${each.key} kubectl cluster-info; do
+        sleep 30
+      done
+    EOF
+  }
+
+  depends_on = [proxmox_vm_qemu.k8s_worker]
+}
+
+resource "kubernetes_secret_v1" "default_tls_cert" {
+  for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
+
+  provider = kubernetes.cluster[each.key]
+
+  metadata {
+    name      = "default-tls-cert"
+    namespace = "kube-system"
+  }
+
+  type = "kubernetes.io/tls"
+
+  data = {
+    "tls.crt" = data.terraform_remote_state.certificate.outputs.wildcard_certificate
+    "tls.key" = data.terraform_remote_state.certificate.outputs.wildcard_private_key
+  }
+
+  depends_on = [null_resource.wait_kubernetes_ready]
 }

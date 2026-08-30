@@ -43,7 +43,8 @@ resource "local_file" "upstream_master" {
   filename = "/tmp/upstream-master.yaml"
   content = templatefile("${path.module}/cloud-init/upstream-master.yaml.tftpl",
     {
-      ubuntu_mirror = local.ubuntu_mirror
+      ubuntu_mirror      = local.ubuntu_mirror,
+      kubernetes_version = var.kubernetes_version
     }
   )
 }
@@ -130,7 +131,7 @@ resource "proxmox_vm_qemu" "k8s_master" {
 resource "null_resource" "wait_rke2_token_is_generated" {
   provisioner "local-exec" {
     command = <<EOF
-      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.upstream_master} 'sudo ls /var/lib/rancher/rke2/server/token'; do
+      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${var.k8s_masters[0].ip} 'sudo ls /var/lib/rancher/rke2/server/token'; do
         sleep 2
       done
     EOF
@@ -143,7 +144,7 @@ data "external" "get_rke2_token" {
   program = ["bash", "${path.module}/scripts/get_rke2_token.sh"]
 
   query = {
-    upstream_master = local.upstream_master
+    upstream_master = var.k8s_masters[0].ip
   }
 
   depends_on = [null_resource.wait_rke2_token_is_generated]
@@ -157,9 +158,10 @@ resource "local_file" "upstream_worker" {
   filename = "/tmp/upstream-worker.yaml"
   content = templatefile("${path.module}/cloud-init/upstream-worker.yaml.tftpl",
     {
-      ubuntu_mirror   = local.ubuntu_mirror,
-      upstream_master = local.upstream_master,
-      rancher_token   = local.rke2_token
+      ubuntu_mirror       = local.ubuntu_mirror,
+      upstream_master     = var.k8s_masters[0].ip,
+      rancher_token       = local.rke2_token,
+      kubernetes_version  = var.kubernetes_version
     }
   )
 }
@@ -189,7 +191,7 @@ resource "proxmox_vm_qemu" "k8s_worker" {
     cores = local.worker_cores
   }
   memory           = local.worker_memory
-  boot             = "order=scsi0" # has to be the same as the OS disk of the template
+  boot             = "order=scsi0"
   clone            = local.clone
   scsihw           = "virtio-scsi-single"
   power_state      = "running"
@@ -212,11 +214,9 @@ resource "proxmox_vm_qemu" "k8s_worker" {
   disks {
     scsi {
       scsi0 {
-        # We have to specify the disk from our template, else Terraform will think it's not supposed to be there
         disk {
           storage = local.storage
-          # The size of the disk should be at least as big as the disk in the template. If it's smaller, the disk will be recreated
-          size = local.worker_disk
+          size    = local.worker_disk
         }
       }
     }
@@ -250,12 +250,12 @@ resource "null_resource" "get_local_kube_config_upstream" {
     command = <<EOF
       set -x
 
-      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.upstream_master} 'ls /etc/rancher/rke2/rke2.yaml'; do
+      while ! ssh -o StrictHostKeyChecking=accept-new ubuntu@${var.k8s_masters[0].ip} 'ls /etc/rancher/rke2/rke2.yaml'; do
         sleep 10
       done
 
-      ssh -o StrictHostKeyChecking=accept-new ubuntu@${local.upstream_master} 'sudo cat /etc/rancher/rke2/rke2.yaml' > ${local.kube_config_upstream}
-      gsed -i 's/127.0.0.1/${local.upstream_master}/g' ${local.kube_config_upstream}
+      ssh -o StrictHostKeyChecking=accept-new ubuntu@${var.k8s_masters[0].ip} 'sudo cat /etc/rancher/rke2/rke2.yaml' > ${local.kube_config_upstream}
+      gsed -i 's/127.0.0.1/${var.k8s_masters[0].ip}/g' ${local.kube_config_upstream}
       chmod 600 ${local.kube_config_upstream}
     EOF
   }

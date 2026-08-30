@@ -4,15 +4,15 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "6.55.0"
+      version = "6.62.0"
     }
     proxmox = {
       source  = "telmate/proxmox"
-      version = "3.0.2-rc08"
+      version = "3.0.2-rc09"
     }
     null = {
       source  = "hashicorp/null"
-      version = "3.3.0"
+      version = "3.3.1"
     }
     local = {
       source  = "hashicorp/local"
@@ -20,7 +20,7 @@ terraform {
     }
     external = {
       source  = "hashicorp/external"
-      version = "2.4.0"
+      version = "2.4.1"
     }
   }
 }

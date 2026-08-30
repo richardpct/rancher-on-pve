@@ -1,4 +1,3 @@
-output "rancher_ip" {
-  value       = var.rancher_ip
-  description = "rancher_ip"
+output "dns_record" {
+  value = var.dns_record
 }

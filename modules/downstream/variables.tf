@@ -15,7 +15,7 @@ locals {
   upstream_master      = "192.168.1.31"
   kube_config_upstream = "~/.kube/local"
   cluster_type         = "downstream"
-  clusters_list        = join(" ", data.terraform_remote_state.rancher.outputs.downstream_clusters)
+  clusters_list        = join(" ", data.terraform_remote_state.rancher.outputs.downstream_clusters[*])
 }
 
 variable "region" {
@@ -26,6 +26,11 @@ variable "region" {
 variable "bucket" {
   type        = string
   description = "bucket"
+}
+
+variable "key_certificate" {
+  type        = string
+  description = "bucket certificate key"
 }
 
 variable "key_upstream" {
@@ -66,6 +71,11 @@ variable "pm_user" {
 variable "pm_password" {
   type        = string
   description = "pm password"
+}
+
+variable "provider_clusters" {
+  type        = set(string)
+  description = "downstream cluster list"
 }
 
 variable "is_prod" {

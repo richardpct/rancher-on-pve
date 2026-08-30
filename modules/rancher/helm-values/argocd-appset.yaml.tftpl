@@ -1,0 +1,93 @@
+applicationsets:
+  cilium-l2:
+    goTemplate: true
+    goTemplateOptions: ["missingkey=error"]
+
+    generators:
+      - merge:
+          mergeKeys:
+            - name
+          generators:
+            - clusters:
+                selector:
+                  matchLabels:
+                    env: downstream
+            - list:
+                elements:
+                  - name: andromeda
+                    start_cilium_vip: "192.168.1.101"
+                    stop_cilium_vip: "192.168.1.109"
+                  - name: phoenix
+                    start_cilium_vip: "192.168.1.111"
+                    stop_cilium_vip: "192.168.1.119"
+
+    template:
+      metadata:
+        name: 'cilium-l2-{{ .name }}'
+      spec:
+        project: default
+        source:
+          repoURL: 'https://github.com/richardpct/helm-example.git'
+          targetRevision: HEAD
+          path: cilium-l2
+          helm:
+            values: |-
+              start_cilium_vip: "{{ .start_cilium_vip }}"
+              stop_cilium_vip: "{{ .stop_cilium_vip }}"
+        destination:
+          name: '{{ .name }}'
+          namespace: web
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
+
+  multi-cluster-web:
+    namespace: argocd
+
+    goTemplate: true
+    goTemplateOptions: ["missingkey=error"]
+
+    generators:
+      - merge:
+          mergeKeys:
+            - name
+          generators:
+            - clusters:
+                selector:
+                  matchLabels:
+                    env: downstream
+            - list:
+                elements:
+                  - name: andromeda
+                    message: "Welcome to the PRODUCTION cluster: Andromeda 🚀"
+                    replicas: 3
+                  - name: phoenix
+                    message: "Welcome to the STAGING cluster: Phoenix 🔥"
+                    replicas: 1
+
+    template:
+      metadata:
+        name: 'simple-web-{{ .name }}'
+      spec:
+        project: default
+        source:
+          repoURL: 'https://github.com/richardpct/helm-example.git'
+          targetRevision: HEAD
+          path: web
+          helm:
+            values: |-
+              message: "{{ .message }}"
+              host: "{{ .name }}.${domain}"
+              replicaCount: {{ .replicas }}
+        destination:
+          name: '{{ .name }}'
+          namespace: web
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true

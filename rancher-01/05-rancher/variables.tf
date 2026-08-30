@@ -18,6 +18,11 @@ variable "key_certificate" {
   description = "bucket certificate key"
 }
 
+variable "key_dns" {
+  type        = string
+  description = "bucket dns key"
+}
+
 variable "key_upstream" {
   type        = string
   description = "bucket upstream key"
@@ -31,4 +36,9 @@ variable "my_domain" {
 variable "rancher_pass" {
   type        = string
   description = "rancher password"
+}
+
+variable "argocd_pass" {
+  type        = string
+  description = "argocd password"
 }

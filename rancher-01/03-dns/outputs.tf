@@ -1,3 +1,3 @@
-output "rancher_ip" {
-  value = module.dns.rancher_ip
+output "dns_record" {
+  value = module.dns.dns_record
 }

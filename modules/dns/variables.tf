@@ -13,12 +13,6 @@ variable "my_domain" {
   description = "my domain name"
 }
 
-variable "applications" {
-  type        = list(string)
-  description = "applications list"
-}
-
-variable "rancher_ip" {
-  type        = string
-  description = "rancher ip"
+variable "dns_record" {
+  type = map(string)
 }
