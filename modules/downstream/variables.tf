@@ -78,11 +78,6 @@ variable "provider_clusters" {
   description = "downstream cluster list"
 }
 
-variable "clusters" {
-  type        = set(string)
-  description = "downstream cluster list"
-}
-
 variable "is_prod" {
   type        = bool
   description = "is this a production environment?"

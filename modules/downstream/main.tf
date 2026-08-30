@@ -268,7 +268,7 @@ resource "null_resource" "wait_kubernetes_ready" {
 }
 
 resource "kubernetes_secret_v1" "default_tls_cert" {
-  for_each = var.clusters
+  for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
 
   provider = kubernetes.cluster[each.key]
 
