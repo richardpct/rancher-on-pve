@@ -14,7 +14,7 @@ repoServer:
   name: repo-server
 
   # -- The number of repo server pods to run
-  replicas: 3
+  replicas: 1
 
   # -- Runtime class name for the repo server
   # @default -- `""` (defaults to global.runtimeClassName)
@@ -35,7 +35,7 @@ repoServer:
     # -- Configures the scaling behavior of the target in both Up and Down directions.
 
 server:
-  replicas: 3
+  replicas: 1
   ingress:
     enabled: true
   ingressClassName: "traefik"
