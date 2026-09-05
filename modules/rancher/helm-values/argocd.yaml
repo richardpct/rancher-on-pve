@@ -25,9 +25,9 @@ repoServer:
     # -- Enable Horizontal Pod Autoscaler ([HPA]) for the repo server
     enabled: false
     # -- Minimum number of replicas for the repo server [HPA]
-    minReplicas: 3
+    minReplicas: 1
     # -- Maximum number of replicas for the repo server [HPA]
-    maxReplicas: 5
+    maxReplicas: 2
     # -- Average CPU utilization percentage for the repo server [HPA]
     targetCPUUtilizationPercentage: 50
     # -- Average memory utilization percentage for the repo server [HPA]
@@ -38,11 +38,12 @@ server:
   replicas: 1
   ingress:
     enabled: true
-  ingressClassName: "traefik"
-  hostname: "argocd.unixworld.io"
-  path: /
-  pathType: Prefix
-  tls:
-    - hosts:
-        - argocd.unixworld.io
-      secretName: tls-argocd-ingress
+    ingressClassName: "traefik"
+    hostname: "argocd.unixworld.io"
+    path: /
+    pathType: Prefix
+    tls: true
+    extraTls:
+      - hosts:
+          - argocd.unixworld.io
+        secretName: tls-argocd-ingress
