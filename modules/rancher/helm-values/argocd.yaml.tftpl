@@ -1,5 +1,5 @@
 global:
-  domain: argocd.unixworld.io
+  domain: "argocd.${domain}"
 
 configs:
   params:
@@ -39,11 +39,11 @@ server:
   ingress:
     enabled: true
     ingressClassName: "traefik"
-    hostname: "argocd.unixworld.io"
+    hostname: "argocd.${domain}"
     path: /
     pathType: Prefix
     tls: true
     extraTls:
       - hosts:
-          - argocd.unixworld.io
+          - "argocd.${domain}"
         secretName: tls-argocd-ingress
