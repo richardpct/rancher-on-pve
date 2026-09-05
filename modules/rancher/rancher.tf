@@ -144,7 +144,7 @@ resource "rancher2_cluster_v2" "downstream_clusters" {
       cni                 = "cilium"
       disable-kube-proxy  = true
       etcd-expose-metrics = false
-      ingress-controller  = "traefik"
+      #ingress-controller  = "traefik"
     })
 
     chart_values = <<EOF
@@ -153,21 +153,8 @@ rke2-cilium:
   k8sServiceHost: "127.0.0.1"
   k8sServicePort: 6443
   l2announcements:
-    enabled: true
+    enabled: false
 
-rke2-traefik:
-  service:
-    labels:
-      service: web
-    spec:
-      type: LoadBalancer
-    annotations:
-      io.cilium/lb-ipam-ips: data.terraform_remote_state.dns.outputs.dns_record[each.value.name]
-
-  tlsStore:
-    default:
-      defaultCertificate:
-        secretName: default-tls-cert
 EOF
   }
 

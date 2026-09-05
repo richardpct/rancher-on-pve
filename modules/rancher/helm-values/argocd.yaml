@@ -38,11 +38,11 @@ server:
   replicas: 1
   ingress:
     enabled: true
-  ingressClassName: "traefik"
-  hostname: "argocd.unixworld.io"
-  path: /
-  pathType: Prefix
-  tls:
-    - hosts:
-        - argocd.unixworld.io
-      secretName: tls-argocd-ingress
+    ingressClassName: "nginx"
+    hostname: "argocd.unixworld.io"
+    path: /
+    pathType: Prefix
+    extraTls:
+      - hosts:
+          - argocd.unixworld.io
+        secretName: tls-argocd-ingress

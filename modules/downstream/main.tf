@@ -267,6 +267,18 @@ resource "null_resource" "wait_kubernetes_ready" {
   depends_on = [proxmox_vm_qemu.k8s_worker]
 }
 
+#resource "kubernetes_namespace_v1" "web" {
+#  for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
+#
+#  provider = kubernetes.cluster[each.key]
+#
+#  metadata {
+#    name = "web"
+#  }
+#
+#  depends_on = [null_resource.wait_kubernetes_ready]
+#}
+
 resource "kubernetes_secret_v1" "default_tls_cert" {
   for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
 
@@ -274,7 +286,7 @@ resource "kubernetes_secret_v1" "default_tls_cert" {
 
   metadata {
     name      = "default-tls-cert"
-    namespace = "kube-system"
+    namespace = "web"
   }
 
   type = "kubernetes.io/tls"
@@ -284,5 +296,6 @@ resource "kubernetes_secret_v1" "default_tls_cert" {
     "tls.key" = data.terraform_remote_state.certificate.outputs.wildcard_private_key
   }
 
-  depends_on = [null_resource.wait_kubernetes_ready]
+  #depends_on = [kubernetes_namespace_v1.web]
+  depends_on = [proxmox_vm_qemu.k8s_worker]
 }

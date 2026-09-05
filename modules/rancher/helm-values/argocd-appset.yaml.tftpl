@@ -1,49 +1,4 @@
 applicationsets:
-  cilium-l2:
-    goTemplate: true
-    goTemplateOptions: ["missingkey=error"]
-
-    generators:
-      - merge:
-          mergeKeys:
-            - name
-          generators:
-            - clusters:
-                selector:
-                  matchLabels:
-                    env: downstream
-            - list:
-                elements:
-                  - name: andromeda
-                    start_cilium_vip: "192.168.1.101"
-                    stop_cilium_vip: "192.168.1.109"
-                  - name: phoenix
-                    start_cilium_vip: "192.168.1.111"
-                    stop_cilium_vip: "192.168.1.119"
-
-    template:
-      metadata:
-        name: 'cilium-l2-{{ .name }}'
-      spec:
-        project: default
-        source:
-          repoURL: 'https://github.com/richardpct/helm-example.git'
-          targetRevision: HEAD
-          path: cilium-l2
-          helm:
-            values: |-
-              start_cilium_vip: "{{ .start_cilium_vip }}"
-              stop_cilium_vip: "{{ .stop_cilium_vip }}"
-        destination:
-          name: '{{ .name }}'
-          namespace: web
-        syncPolicy:
-          automated:
-            prune: true
-            selfHeal: true
-          syncOptions:
-            - CreateNamespace=true
-
   multi-cluster-web:
     namespace: argocd
 
@@ -75,7 +30,7 @@ applicationsets:
         project: default
         source:
           repoURL: 'https://github.com/richardpct/helm-example.git'
-          targetRevision: HEAD
+          targetRevision: nginx
           path: web
           helm:
             values: |-
@@ -85,6 +40,55 @@ applicationsets:
         destination:
           name: '{{ .name }}'
           namespace: web
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
+
+  traefik-ingress:
+    namespace: argocd
+
+    goTemplate: true
+    goTemplateOptions: ["missingkey=error"]
+
+    generators:
+      - merge:
+          mergeKeys:
+            - name
+          generators:
+            - clusters:
+                selector:
+                  matchLabels:
+                    env: downstream
+            - list:
+                elements:
+                  - name: andromeda
+                    message: "Welcome to the PRODUCTION cluster: Andromeda 🚀"
+                    replicas: 3
+                  - name: phoenix
+                    message: "Welcome to the STAGING cluster: Phoenix 🔥"
+                    replicas: 1
+
+    template:
+      metadata:
+        name: 'traefik-ingress-{{ .name }}'
+      spec:
+        project: default
+        sources:
+          - repoURL: 'https://traefik.github.io/charts'
+            chart: traefik
+            targetRevision: 40.1.0
+            helm:
+              valueFiles:
+                - $myrepo/traefik-ingress/values.yaml
+          - repoURL: https://github.com/richardpct/helm-example.git
+            targetRevision: nginx
+            ref: myrepo
+        destination:
+          name: '{{ .name }}'
+          namespace: traefik
         syncPolicy:
           automated:
             prune: true
