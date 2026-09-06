@@ -97,7 +97,7 @@ ke2-traefik:
     spec:
       type: LoadBalancer
     annotations:
-      io.cilium/lb-ipam-ips: data.terraform_remote_state.dns.outputs.dns_record[each.value.name]
+      io.cilium/lb-ipam-ips: ${data.terraform_remote_state.dns.outputs.dns_record[each.value.name]}
 
   tlsStore:
     default:
@@ -163,7 +163,6 @@ export TF_VAR_key_dns="tofu/rancher/dns/tofu.tfstate"
 export TF_VAR_key_upstream="tofu/rancher/upstream/tofu.tfstate"
 export TF_VAR_key_rancher="tofu/rancher/rancher/tofu.tfstate"
 export TF_VAR_key_downstream="tofu/rancher/downstream/tofu.tfstate"
-export TF_VAR_key_kubernetes="tofu/rancher/kubernetes/tofu.tfstate"
 export TF_VAR_my_domain="<DOMAIN>"
 export TF_VAR_my_email="<EMAIL>"
 export TF_VAR_pm_user="<PROXMOX USER>"
@@ -253,6 +252,7 @@ For destroying your infrastructure, do it in the reverse order:
     $ cd ../02-certificate
     $ make destroy
     $ cd ../01-bucket
+    $ make destroy
 
 # Limitations
 
