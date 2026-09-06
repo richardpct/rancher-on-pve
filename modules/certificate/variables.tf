@@ -1,14 +1,14 @@
 variable "region" {
   type        = string
-  description = "region name"
+  description = "AWS region used for the Route53 DNS-01 challenge"
 }
 
 variable "my_domain" {
   type        = string
-  description = "my domain name"
+  description = "base domain; a *.<domain> wildcard cert is requested"
 }
 
 variable "my_email" {
   type        = string
-  description = "my email"
+  description = "contact email registered with the ACME account"
 }

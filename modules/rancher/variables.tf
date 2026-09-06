@@ -39,14 +39,17 @@ variable "kubernetes_version" {
 
 variable "rancher_pass" {
   type        = string
-  description = "rancher password"
+  description = "rancher admin password"
+  sensitive   = true
 }
 
 variable "argocd_pass" {
   type        = string
-  description = "argocd password"
+  description = "argocd admin password"
+  sensitive   = true
 }
 
 variable "downstream_clusters" {
-  type = set(string)
+  type        = set(string)
+  description = "names of the downstream clusters to create in rancher"
 }
