@@ -162,7 +162,7 @@ rke2-traefik:
     spec:
       type: LoadBalancer
     annotations:
-      io.cilium/lb-ipam-ips: data.terraform_remote_state.dns.outputs.dns_record[each.value.name]
+      io.cilium/lb-ipam-ips: ${data.terraform_remote_state.dns.outputs.dns_record[each.key]}
 
   tlsStore:
     default:

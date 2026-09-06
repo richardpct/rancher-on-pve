@@ -12,7 +12,6 @@ locals {
   storage              = var.is_prod ? "mypool" : "local-lvm"
   k8s_masters_list     = join(" ", [for k8s_master in var.k8s_masters : k8s_master.ip])
   k8s_workers_list     = join(" ", [for k8s_worker in var.k8s_workers : k8s_worker.ip])
-  upstream_master      = "192.168.1.31"
   kube_config_upstream = "~/.kube/local"
   cluster_type         = "downstream"
   clusters_list        = join(" ", data.terraform_remote_state.rancher.outputs.downstream_clusters[*])
