@@ -38,22 +38,23 @@ variable "gateway" {
 
 variable "public_ssh_key" {
   type        = string
-  description = "public ssh key"
+  description = "ssh public key injected into the VMs via cloud-init"
 }
 
 variable "pm_api_url" {
   type        = string
-  description = "pm api url"
+  description = "proxmox api url"
 }
 
 variable "pm_user" {
   type        = string
-  description = "pm user"
+  description = "proxmox api user"
 }
 
 variable "pm_password" {
   type        = string
-  description = "pm password"
+  description = "proxmox api password"
+  sensitive   = true
 }
 
 variable "is_prod" {

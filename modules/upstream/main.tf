@@ -154,14 +154,14 @@ locals {
   rke2_token = data.external.get_rke2_token.result["token"]
 }
 
-resource "local_file" "upstream_worker" {
+resource "local_sensitive_file" "upstream_worker" {
   filename = "/tmp/upstream-worker.yaml"
   content = templatefile("${path.module}/cloud-init/upstream-worker.yaml.tftpl",
     {
-      ubuntu_mirror       = local.ubuntu_mirror,
-      upstream_master     = var.k8s_masters[0].ip,
-      rancher_token       = local.rke2_token,
-      kubernetes_version  = var.kubernetes_version
+      ubuntu_mirror      = local.ubuntu_mirror,
+      upstream_master    = var.k8s_masters[0].ip,
+      rancher_token      = local.rke2_token,
+      kubernetes_version = var.kubernetes_version
     }
   )
 }
@@ -177,7 +177,7 @@ resource "null_resource" "deploy_cloud_init_scripts_workers" {
     EOF
   }
 
-  depends_on = [local_file.upstream_worker]
+  depends_on = [local_sensitive_file.upstream_worker]
 }
 
 resource "proxmox_vm_qemu" "k8s_worker" {

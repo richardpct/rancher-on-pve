@@ -6,7 +6,7 @@ configs:
     server.insecure: true
 
   secret:
-    argocdServerAdminPassword: "$2a$10$8.jKSk/J.yLXqFQUSGG6dO8nDvx2jtXBHrD/IYqOjG.Fy.HWoKUU."
+    argocdServerAdminPassword: "${argocd_pass_hash}"
 
 ## Repo Server
 repoServer:

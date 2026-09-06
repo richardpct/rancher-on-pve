@@ -55,7 +55,7 @@ resource "kubernetes_secret_v1" "argocd_cluster_secrets" {
 
   type = "Opaque"
 
-  depends_on = [rancher2_token.argocd]
+  depends_on = [kubernetes_namespace_v1.argocd, rancher2_token.argocd]
 }
 
 resource "helm_release" "argo_cd" {
@@ -69,7 +69,8 @@ resource "helm_release" "argo_cd" {
   values = [
     templatefile("${path.module}/helm-values/argocd.yaml.tftpl",
       {
-        domain = var.my_domain
+        domain           = var.my_domain
+        argocd_pass_hash = bcrypt(var.argocd_pass)
       }
     )
   ]

@@ -35,5 +35,6 @@ variable "pm_user" {
 
 variable "pm_password" {
   type        = string
-  description = "pm password"
+  description = "proxmox API password"
+  sensitive   = true
 }

@@ -12,7 +12,7 @@ module "downstream" {
   pm_user           = var.pm_user
   pm_password       = var.pm_password
   provider_clusters = ["andromeda", "phoenix"]
-  is_prod           = "false"
+  is_prod           = false
   k8s_masters = [
     { name = "andromeda-master-01", vmid = 102, ip = "192.168.1.32", cidr_prefix = 24, target_node = "pve-01", cluster = "andromeda" },
     { name = "andromeda-master-02", vmid = 103, ip = "192.168.1.33", cidr_prefix = 24, target_node = "pve-02", cluster = "andromeda" },

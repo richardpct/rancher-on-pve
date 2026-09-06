@@ -147,28 +147,28 @@ resource "rancher2_cluster_v2" "downstream_clusters" {
       ingress-controller  = "traefik"
     })
 
-    chart_values = <<EOF
-rke2-cilium:
-  kubeProxyReplacement: true
-  k8sServiceHost: "127.0.0.1"
-  k8sServicePort: 6443
-  l2announcements:
-    enabled: true
+    chart_values = <<-EOF
+      rke2-cilium:
+        kubeProxyReplacement: true
+        k8sServiceHost: "127.0.0.1"
+        k8sServicePort: 6443
+        l2announcements:
+          enabled: true
 
-rke2-traefik:
-  service:
-    labels:
-      service: web
-    spec:
-      type: LoadBalancer
-    annotations:
-      io.cilium/lb-ipam-ips: data.terraform_remote_state.dns.outputs.dns_record[each.value.name]
+      rke2-traefik:
+        service:
+          labels:
+            service: web
+          spec:
+            type: LoadBalancer
+          annotations:
+            io.cilium/lb-ipam-ips: "${data.terraform_remote_state.dns.outputs.dns_record[each.key]}"
 
-  tlsStore:
-    default:
-      defaultCertificate:
-        secretName: default-tls-cert
-EOF
+        tlsStore:
+          default:
+            defaultCertificate:
+              secretName: default-tls-cert
+    EOF
   }
 
   depends_on = [rancher2_setting.agent_tls_mode]

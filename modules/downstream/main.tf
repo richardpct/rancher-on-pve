@@ -69,7 +69,7 @@ resource "null_resource" "ssh_keys_cleanup" {
   }
 }
 
-resource "local_file" "downstream_master" {
+resource "local_sensitive_file" "downstream_master" {
   for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
 
   filename = "/tmp/downstream-master-${each.key}.yaml"
@@ -94,7 +94,7 @@ resource "null_resource" "deploy_cloud_init_scripts_masters" {
     EOF
   }
 
-  depends_on = [local_file.downstream_master]
+  depends_on = [local_sensitive_file.downstream_master]
 }
 
 resource "proxmox_vm_qemu" "k8s_master" {
@@ -161,7 +161,7 @@ resource "proxmox_vm_qemu" "k8s_master" {
   depends_on = [null_resource.update_images, null_resource.deploy_cloud_init_scripts_masters]
 }
 
-resource "local_file" "downstream_worker" {
+resource "local_sensitive_file" "downstream_worker" {
   for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
 
   filename = "/tmp/downstream-worker-${each.key}.yaml"
@@ -186,7 +186,7 @@ resource "null_resource" "deploy_cloud_init_scripts_workers" {
     EOF
   }
 
-  depends_on = [local_file.downstream_worker]
+  depends_on = [local_sensitive_file.downstream_worker]
 }
 
 resource "proxmox_vm_qemu" "k8s_worker" {

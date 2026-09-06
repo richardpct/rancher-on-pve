@@ -35,10 +35,12 @@ variable "my_domain" {
 
 variable "rancher_pass" {
   type        = string
-  description = "rancher password"
+  description = "rancher admin password"
+  sensitive   = true
 }
 
 variable "argocd_pass" {
   type        = string
-  description = "argocd password"
+  description = "argocd admin password"
+  sensitive   = true
 }

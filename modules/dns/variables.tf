@@ -14,5 +14,6 @@ variable "my_domain" {
 }
 
 variable "dns_record" {
-  type = map(string)
+  type        = map(string)
+  description = "map of DNS record name => IPv4 address, created in the zone"
 }
