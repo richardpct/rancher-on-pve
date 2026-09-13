@@ -28,6 +28,12 @@ variable "key_rancher" {
   description = "bucket rancher key"
 }
 
+variable "cephfs_secret" {
+  type        = string
+  description = "cephfs secret"
+  sensitive   = true
+}
+
 variable "nameserver" {
   type        = string
   description = "nameserver"

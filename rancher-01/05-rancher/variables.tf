@@ -44,3 +44,14 @@ variable "argocd_pass" {
   description = "argocd admin password"
   sensitive   = true
 }
+
+variable "ceph_cluster_id" {
+  type        = string
+  description = "ceph cluster id"
+}
+
+variable "cephfs_secret" {
+  type        = string
+  description = "cephfs secret"
+  sensitive   = true
+}

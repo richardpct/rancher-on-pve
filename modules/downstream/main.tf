@@ -286,3 +286,35 @@ resource "kubernetes_secret_v1" "default_tls_cert" {
 
   depends_on = [null_resource.wait_kubernetes_ready]
 }
+
+resource "kubernetes_namespace_v1" "ceph_csi" {
+  for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
+
+  provider = kubernetes.cluster[each.key]
+
+  metadata {
+    name = "ceph-csi"
+  }
+
+  depends_on = [null_resource.wait_kubernetes_ready]
+}
+
+resource "kubernetes_secret_v1" "csi_cephfs_secret" {
+  for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
+
+  provider = kubernetes.cluster[each.key]
+
+  metadata {
+    name      = "csi-cephfs-secret"
+    namespace = "ceph-csi"
+  }
+
+  type = "Opaque"
+
+  data = {
+    "userID"  = var.ceph_user_id
+    "userKey" = var.cephfs_secret
+  }
+
+  depends_on = [kubernetes_namespace_v1.ceph_csi]
+}
