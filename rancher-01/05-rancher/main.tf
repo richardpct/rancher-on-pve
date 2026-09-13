@@ -9,5 +9,6 @@ module "rancher" {
   kubernetes_version  = "v1.35.6+rke2r1"
   rancher_pass        = var.rancher_pass
   argocd_pass         = var.argocd_pass
+  ceph_cluster_id     = var.ceph_cluster_id
   downstream_clusters = ["andromeda", "phoenix"]
 }

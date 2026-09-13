@@ -89,7 +89,8 @@ resource "helm_release" "argocd_appset" {
   values = [
     templatefile("${path.module}/helm-values/argocd-appset.yaml.tftpl",
       {
-        domain = var.my_domain
+        domain          = var.my_domain
+        ceph_cluster_id = var.ceph_cluster_id
       }
     )
   ]

@@ -1,4 +1,54 @@
 applicationsets:
+  ceph-csi:
+    namespace: argocd
+
+    goTemplate: true
+    goTemplateOptions: ["missingkey=error"]
+
+    generators:
+      - merge:
+          mergeKeys:
+            - name
+          generators:
+            - clusters:
+                selector:
+                  matchLabels:
+                    env: downstream
+            - list:
+                elements:
+                  - name: andromeda
+                  - name: phoenix
+
+    template:
+      metadata:
+        name: 'ceph-csi-{{ .name }}'
+      spec:
+        project: default
+        sources:
+          - repoURL: 'https://ceph.github.io/csi-charts'
+            chart: ceph-csi-cephfs
+            targetRevision: 3.16.2
+            helm:
+              valueFiles:
+                - $myrepo/ceph-csi/values.yaml
+              parameters:
+                - name: csiConfig[0].clusterID
+                  value: ${ceph_cluster_id}
+                - name: storageClass.clusterID
+                  value: ${ceph_cluster_id}
+          - repoURL: https://github.com/richardpct/helm-example.git
+            targetRevision: add-ceph
+            ref: myrepo
+        destination:
+          name: '{{ .name }}'
+          namespace: ceph-csi
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+          syncOptions:
+            - CreateNamespace=false
+
   cilium-l2:
     goTemplate: true
     goTemplateOptions: ["missingkey=error"]

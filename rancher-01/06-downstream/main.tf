@@ -5,6 +5,8 @@ module "downstream" {
   key_certificate   = var.key_certificate
   key_upstream      = var.key_upstream
   key_rancher       = var.key_rancher
+  ceph_user_id      = "admin"
+  cephfs_secret     = var.cephfs_secret
   nameserver        = var.nameserver
   gateway           = var.gateway
   public_ssh_key    = var.public_ssh_key

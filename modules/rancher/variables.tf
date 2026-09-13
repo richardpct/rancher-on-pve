@@ -49,6 +49,11 @@ variable "argocd_pass" {
   sensitive   = true
 }
 
+variable "ceph_cluster_id" {
+  type        = string
+  description = "ceph cluster id"
+}
+
 variable "downstream_clusters" {
   type        = set(string)
   description = "names of the downstream clusters to create in rancher"
