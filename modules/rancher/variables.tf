@@ -54,12 +54,6 @@ variable "ceph_cluster_id" {
   description = "ceph cluster id"
 }
 
-variable "cephfs_secret" {
-  type        = string
-  description = "cephfs secret"
-  sensitive   = true
-}
-
 variable "downstream_clusters" {
   type        = set(string)
   description = "names of the downstream clusters to create in rancher"

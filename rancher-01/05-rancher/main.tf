@@ -10,6 +10,5 @@ module "rancher" {
   rancher_pass        = var.rancher_pass
   argocd_pass         = var.argocd_pass
   ceph_cluster_id     = var.ceph_cluster_id
-  cephfs_secret       = var.cephfs_secret
   downstream_clusters = ["andromeda", "phoenix"]
 }
