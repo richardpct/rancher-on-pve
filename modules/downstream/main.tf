@@ -299,6 +299,34 @@ resource "kubernetes_namespace_v1" "ceph_csi" {
   depends_on = [null_resource.wait_kubernetes_ready]
 }
 
+resource "kubernetes_namespace_v1" "harbor" {
+  provider = kubernetes.cluster["andromeda"]
+
+  metadata {
+    name = "harbor"
+  }
+
+  depends_on = [null_resource.wait_kubernetes_ready]
+}
+
+resource "kubernetes_secret_v1" "harbor_tls_cert" {
+  provider = kubernetes.cluster["andromeda"]
+
+  metadata {
+    name      = "registry-harbor-ingress"
+    namespace = "harbor"
+  }
+
+  type = "kubernetes.io/tls"
+
+  data = {
+    "tls.crt" = data.terraform_remote_state.certificate.outputs.wildcard_certificate
+    "tls.key" = data.terraform_remote_state.certificate.outputs.wildcard_private_key
+  }
+
+  depends_on = [kubernetes_namespace_v1.harbor]
+}
+
 resource "kubernetes_secret_v1" "csi_cephfs_secret" {
   for_each = data.terraform_remote_state.rancher.outputs.downstream_clusters
 
