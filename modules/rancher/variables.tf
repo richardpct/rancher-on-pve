@@ -49,6 +49,12 @@ variable "argocd_pass" {
   sensitive   = true
 }
 
+variable "harbor_pass" {
+  type        = string
+  description = "harbor admin password"
+  sensitive   = true
+}
+
 variable "ceph_cluster_id" {
   type        = string
   description = "ceph cluster id"

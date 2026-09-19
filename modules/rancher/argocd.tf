@@ -91,6 +91,7 @@ resource "helm_release" "argocd_appset" {
       {
         domain          = var.my_domain
         ceph_cluster_id = var.ceph_cluster_id
+        harbor_pass     = var.harbor_pass
       }
     )
   ]

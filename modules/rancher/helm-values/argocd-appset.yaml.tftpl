@@ -1,3 +1,35 @@
+applications:
+  registry:
+    namespace: argocd
+    annotations:
+      argocd.argoproj.io/sync-wave: "10"
+    finalizers:
+    - resources-finalizer.argocd.argoproj.io
+    project: default
+    sources:
+      - repoURL: https://helm.goharbor.io
+        chart: harbor
+        targetRevision: 1.19.2
+        helm:
+          values: |
+            harborAdminPassword: ${harbor_pass}
+          valueFiles:
+            - $myrepo/harbor/values.yaml
+      - repoURL: 'https://github.com/richardpct/helm-example.git'
+        targetRevision: HEAD
+        ref: myrepo
+    destination:
+      name: andromeda
+      namespace: harbor
+    syncPolicy:
+      automated:
+        prune: false
+        selfHeal: false
+      syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+    revisionHistoryLimit: null
+
 applicationsets:
   ceph-csi:
     namespace: argocd
@@ -37,7 +69,7 @@ applicationsets:
                 - name: storageClass.clusterID
                   value: ${ceph_cluster_id}
           - repoURL: https://github.com/richardpct/helm-example.git
-            targetRevision: add-ceph
+            targetRevision: HEAD
             ref: myrepo
         destination:
           name: '{{ .name }}'
