@@ -144,7 +144,7 @@ resource "rancher2_cluster_v2" "downstream_clusters" {
       cni                 = "cilium"
       disable-kube-proxy  = true
       etcd-expose-metrics = false
-      ingress-controller  = "traefik"
+      ingress-controller  = ["traefik"]
     })
 
     chart_values = <<-EOF
