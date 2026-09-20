@@ -24,6 +24,7 @@ resource "kubernetes_secret_v1" "tls_argocd_ingress" {
 
 resource "rancher2_token" "argocd" {
   description = "token for ArgoCD to manage downstream clusters"
+  ttl         = 0
 
   depends_on = [rancher2_setting.agent_tls_mode]
 }
