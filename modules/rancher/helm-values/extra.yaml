@@ -1,0 +1,22 @@
+extraObjects:
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: argo-cd-argocd-server-traefik
+      namespace: argocd
+    spec:
+      ingressClassName: traefik
+      rules:
+        - host: "argocd.unixworld.io"
+          http:
+            paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                  service:
+                    name: argo-cd-argocd-server
+                    port:
+                      number: 80
+      tls:
+        - hosts: ["argocd.unixworld.io"]
+          secretName: tls-argocd-ingress

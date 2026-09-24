@@ -66,7 +66,8 @@ resource "helm_release" "argo_cd" {
   create_namespace = true
   force_update     = true
 
-  values = ["${file("${path.module}/helm-values/argocd.yaml")}"]
+  values = ["${file("${path.module}/helm-values/argocd.yaml")}",
+            "${file("${path.module}/helm-values/extra.yaml")}"]
 
   depends_on = [kubernetes_secret_v1.argocd_cluster_secrets]
 }
